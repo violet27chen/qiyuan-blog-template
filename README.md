@@ -50,17 +50,33 @@
 
 ## 🛠 开发工具：右键样式编辑器（仅本地 `astro dev`）
 
-本地 `astro dev` 运行时**直接定死右键可用**，无需开关：在页面任意位置（或任意元素上）**右键**即弹出样式编辑器，边看边调：
+本地 `astro dev` 运行时**直接定死右键可用**，无需开关：在页面任意位置**右键**即弹出样式编辑器，边看边调。面板内**不使用任何表情符号**，图标一律为内联 SVG；所有可调属性均标注**中文 / 日文 / 英文**三语。
 
 - **元素**：编辑右键所点元素的内联样式（文字/背景颜色、字号、字重、内边距、外边距、圆角、边框、对齐、行高、不透明度）。
-- **上传图片替换**：在元素面板顶部点击「📷 上传图片替换」——
-  - 右键 **`<img>`**（如头图）→ 直接替换其 `src`；
-  - 右键**带背景图的元素**（如背景图区域）→ 直接替换其 `background-image`。
-  - 图片以 base64 注入，**刷新后还原**（开发期调试用）。
-- **主题变量**：按当前「☀ 亮色 / 🌙 暗色」分别编辑全局 CSS 变量（`--background` / `--foreground` / `--primary` / `--card` / `--color-pink` 等），即默认黑/白主题。改动注入 `<style>` 并持久化到 `localStorage`，刷新后保留；「复制 CSS」可导出，「重置」恢复默认。
-- 编辑器面板**使用博客主题变量**，自动跟随当前亮/暗主题，不会突兀。
+- **上传媒体替换**：元素面板顶部「上传图片 / 画像 / Image」按钮（SVG 图标），支持 **图片 / GIF / 视频**：
+  - 右键 **`<img>`**（如头图、精选分类图）→ 直接替换其 `src`；若右键的是包裹图片的容器，会自动定位其中的 `<img>` 一并替换。
+  - 右键**带背景图的元素**（如背景图区域）→ 替换其 `background-image`；上传**视频**则注入一个绝对定位的 `<video>` 覆盖层作为动态背景。
+  - 内容以 base64 / blob 注入，**刷新后还原**（开发期调试用，不写盘）。
+- **主题变量**：按当前「亮色 / 暗色」分别编辑全局 CSS 变量（SVG 太阳 / 月亮 图标切换）。变量以**自然语言说明**呈现（如「页面背景色 / ページ背景 / Page background」），技术变量名仅作小号代码注记。改动注入 `<style>` 并持久化到 `localStorage`，刷新后保留；「复制 CSS」可导出，「重置」恢复默认。
+- 面板**不显示滚动条**（已隐藏，主题变量区改双列网格压缩高度）；点击面板外空白处自动关闭；面板配色**使用博客主题变量**，自动跟随亮/暗主题。
 
-> ⚠️ 该功能**仅在 `import.meta.env.DEV` 下挂载**（`src/layouts/Layout.astro` 中以 `{import.meta.env.DEV && <StyleEditor />}` 包裹，`src/components/dev/StyleEditor.tsx` 组件内也有兜底守卫）。执行 `astro build` 时会被自动 tree-shake，**不会进入生产产物**，对线上访客零影响。
+> ⚠️ 该功能**仅在 `import.meta.env.DEV` 下挂载**（`src/layouts/Layout.astro` 中以 `{import.meta.env.DEV && <StyleEditor />}` 包裹，`src/components/dev/StyleEditor.tsx` 组件内亦有兜底守卫）。`astro build` 时被自动 tree-shake，**不进入生产产物**，对线上访客零影响。
+
+## 安全响应头
+
+两个边缘函数（`edge-functions/api/[[default]].js` 与 `resource-site/edge-functions/api/[[default]].js`）已为**所有 API 响应**统一注入安全头（经 `getCorsHeaders()` spread，一处覆盖全部 JSON / 流式 / 代理响应）：
+
+| 响应头 | 值 |
+| --- | --- |
+| `X-Content-Type-Options` | `nosniff` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `X-Frame-Options` | `SAMEORIGIN`（非 `DENY`，保证网盘内联预览的同站 `<iframe>` 不被阻断） |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains`（未上 preload 列表，不加 `preload`） |
+
+**静态资源**（HTML / JS / CSS / 字体 / 图片）的安全头需在 **EdgeOne 控制台 → 站点加速 → 配置 → HTTP 响应头（修改响应头）** 中按文件后缀统一添加上述同样的头（CDN 缓存层注入，被缓存的资源也带安全头）。CSP 暂未启用（站内有 AdSense 与内联脚本，需单独审计）。
+
+> **可选加固**：在 **EdgeOne 控制台 → 安全防护 → 速率限制** 给写入类接口配「客户端 IP 60s 内 ≥1 次 → 拦截 429」，覆盖 `POST /api/comment-image`、`POST /api/drive/upload-init`、`POST /api/temp-mail/address`，防滥发。EdgeOne 边缘直接判真实客户端 IP（`EO-Connecting-IP`），不会因 CDN 聚合误伤全体用户。
 
 ## 技术栈
 

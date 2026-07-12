@@ -5,8 +5,21 @@ let JWT_SEC = '';
 // 允许的跨域来源 - 部署后改为你的资源站域名
 const ALLOWED_ORIGINS = ['https://resources.qiyuan.icu', 'http://resources.qiyuan.icu', 'https://www.resources.qiyuan.icu', 'http://www.resources.qiyuan.icu'];
 
+// 安全响应头：注入到所有 API 响应（经 getCorsHeaders 统一 spread）。
+// - X-Frame-Options 用 SAMEORIGIN 而非 DENY：资源站内联预览需在同站 iframe 渲染。
+// - HSTS 仅 max-age+includeSubDomains（未上 preload 列表，不加 preload）。
+// 静态资源的安全头由 EdgeOne「修改 HTTP 响应头」规则统一注入，不在此处理。
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
+};
+
 function getCorsHeaders(origin) {
   const headers = {
+    ...SECURITY_HEADERS,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };

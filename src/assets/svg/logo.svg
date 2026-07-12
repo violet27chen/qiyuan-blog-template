@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 150" fill="none">
+  <!-- Stylized "qiyuan" text -->
+  <text x="200" y="70" font-family="Arial, Helvetica, sans-serif" font-size="110" font-style="italic" font-weight="900" fill="#FF7EB3" text-anchor="middle" dominant-baseline="middle">qiyuan</text>
+  <!-- Decorative underline -->
+  <path d="M40 130 Q 200 145 360 130" stroke="#FF7EB3" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <!-- Decorative dot -->
+  <circle cx="375" cy="115" r="8" fill="#FF7EB3"/>
+</svg>

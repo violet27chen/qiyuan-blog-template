@@ -1,0 +1,396 @@
+---
+import HomeSider from '@components/layout/HomeSider.astro';
+import Cover from '@components/ui/cover/Cover.astro';
+import Layout from '@layouts/Layout.astro';
+import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
+import { Icon } from 'astro-icon/components';
+import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
+
+const locale = getLocaleFromUrl(Astro.url.pathname);
+const title = `404 - ${t(locale, 'notFound.title')}`;
+const description = t(locale, 'notFound.description');
+
+// Debug flag: Set to true to pause animation at the "Cat" shape for inspection
+const DEBUG_CAT_STATE = false;
+---
+
+<Layout title={title} description={description}>
+  <TwoColumnLayout>
+    <Cover slot="cover" title="404" />
+    <HomeSider slot="sider" />
+      <div class:list={['cat-404-container', { 'debug-paused': DEBUG_CAT_STATE }]}>
+        <svg class="cat-404" viewBox="0 0 600 350" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+             <filter id="soft-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- Group for the whole composition -->
+          <g class="composition">
+            
+            <!-- THE '0' -> HEAD -->
+            <g class="head-group">
+               <!-- Background fill for the head -->
+               <ellipse class="digit-0-bg" cx="300" cy="200" rx="35" ry="70" />
+               <!-- The Outline (strokes) -->
+               <ellipse class="digit-0-outline" cx="300" cy="200" rx="35" ry="70" />
+            </g>
+
+            <!-- THE '4' (Left) -> LEFT EAR -->
+            <g class="digit-4 left-4">
+              <!-- Triangle part: Morphing path -->
+              <!-- Start: Standard 4 triangle (Right-angled) -->
+              <path class="ear-shape left-ear-path" d="M220,140 L160,220 Q190,220 220,220 Z" /> 
+              <!-- Vertical line (Stem) -->
+              <line class="stem" x1="220" y1="140" x2="220" y2="280" />
+            </g>
+
+            <!-- THE '4' (Right) -> RIGHT EAR -->
+            <g class="digit-4 right-4">
+              <!-- Triangle part: Morphing path -->
+              <!-- Start: Standard 4 triangle -->
+              <path class="ear-shape right-ear-path" d="M440,140 L380,220 Q410,220 440,220 Z" />
+              <!-- Vertical line (Stem) -->
+              <line class="stem" x1="440" y1="140" x2="440" y2="280" />
+            </g>
+
+            <!-- FACE FEATURES -->
+            <g class="face-features">
+
+              <!-- Eyes -->
+              <g class="eyes-group">
+                <ellipse class="eye" cx="260" cy="195" rx="9" ry="13" />
+                <circle class="eye-highlight" cx="264" cy="191" r="3" />
+
+                <ellipse class="eye" cx="340" cy="195" rx="9" ry="13" />
+                <circle class="eye-highlight" cx="344" cy="191" r="3" />
+              </g>
+
+              <!-- Nose (Soft Rounded Triangle) -->
+              <path class="nose" d="M292,218 Q300,215 308,218 L300,226 Z" />
+
+              <!-- Mouth (Simple Cute Curves, Disconnected) -->
+              <path class="mouth" d="M300,226 Q290,236 280,228" />
+              <path class="mouth" d="M300,226 Q310,236 320,228" />
+
+              <!-- Whiskers (Straight, fanning out) -->
+              <g class="whiskers">
+                <line x1="240" y1="215" x2="190" y2="205" />
+                <line x1="240" y1="225" x2="190" y2="225" />
+                <line x1="240" y1="235" x2="190" y2="245" />
+
+                <line x1="360" y1="215" x2="410" y2="205" />
+                <line x1="360" y1="225" x2="410" y2="225" />
+                <line x1="360" y1="235" x2="410" y2="245" />
+              </g>
+            </g>
+          </g>
+        </svg>
+
+        <div class="message-container">
+          <p class="fade-text">{t(locale, 'notFound.message')}</p>
+        </div>
+
+        <div class="actions">
+           <a href={localizedPath('/', locale)} class="action-btn home-btn">
+            <Icon name="fa6-solid:house-chimney" />
+            <span>{t(locale, 'notFound.backHome')}</span>
+          </a>
+          <a href={localizedPath('/archives', locale)} class="action-btn archive-btn">
+            <Icon name="ri:archive-2-fill" />
+            <span>{t(locale, 'notFound.browseArchives')}</span>
+          </a>
+        </div>
+      </div>
+
+<style>
+  .cat-404-container {
+    /* Palette - soft pastel colors for light mode */
+    --c-stroke: #f5a0b8;
+    --c-head-bg: rgba(245, 160, 184, 0.1);
+    --c-ear-fill: rgba(245, 180, 160, 0.2);
+    --c-nose: #f5b0a0;
+    --c-features: #666;
+
+    --anim-dur: 6s;
+
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: "寒蝉全圆体", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  :global(.dark) .cat-404-container {
+    --c-stroke: rgba(241, 139, 179, 0.7);
+    --c-head-bg: rgba(241, 139, 179, 0.1);
+    --c-ear-fill: rgba(240, 163, 135, 0.15);
+    --c-nose: rgba(240, 163, 135, 0.8);
+    --c-features: #bbb;
+  }
+
+  .cat-404 {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Debug State: Pause everything at 3s (50% mark) where the cat is fully formed */
+  .debug-paused * {
+    animation-play-state: paused !important;
+    animation-delay: -3s !important; /* Force jump to mid-animation */
+  }
+
+  /* --- ANIMATIONS --- */
+
+  /* HEAD: 0 -> Face */
+  /* Start: Tall Thin Oval (Digit 0). End: Wide Oval (Cat Head) */
+  .digit-0-bg {
+    fill: var(--c-head-bg);
+    opacity: 0;
+    transform-origin: center;
+    animation: head-bg var(--anim-dur) ease-in-out infinite;
+  }
+  .digit-0-outline {
+    fill: none;
+    stroke: var(--c-stroke);
+    stroke-width: 12;
+    stroke-linecap: round;
+    transform-origin: center;
+    animation: head-outline var(--anim-dur) ease-in-out infinite;
+  }
+
+  .nose {
+    fill: var(--c-nose);
+  }
+
+  @keyframes head-bg {
+    0%, 20% { rx: 35; ry: 70; opacity: 0; }
+    35%, 75% { rx: 130; ry: 95; opacity: 1; }
+    90%, 100% { rx: 35; ry: 70; opacity: 0; }
+  }
+  @keyframes head-outline {
+    0%, 20% { rx: 35; ry: 70; stroke-width: 12; }
+    35%, 75% { rx: 130; ry: 95; stroke-width: 8; }
+    90%, 100% { rx: 35; ry: 70; stroke-width: 12; }
+  }
+
+
+  /* EARS: 4 -> Triangle */
+  .ear-shape {
+    fill: none;
+    stroke: var(--c-stroke);
+    stroke-width: 12;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .stem {
+    stroke: var(--c-stroke);
+    stroke-width: 12;
+    stroke-linecap: round;
+  }
+
+  /* Left Ear Animation */
+  .left-ear-path {
+    animation: left-ear-morph var(--anim-dur) ease-in-out infinite,
+               ear-color-l var(--anim-dur) ease-in-out infinite;
+  }
+  /* Left Ear Target: 
+     Calculated to sit on the ellips curvature (rx130, ry95)
+     Base: (200, 140) to (260, 110) with Q curve
+     Tip: (180, 50)
+  */
+  @keyframes left-ear-morph {
+    0%, 20% { 
+      d: path("M220,140 L160,220 Q190,220 220,220 Z"); 
+    }
+    35%, 75% { 
+      d: path("M180,50 L200,140 Q230,115 260,110 Z"); 
+    }
+    90%, 100% { 
+      d: path("M220,140 L160,220 Q190,220 220,220 Z"); 
+    }
+  }
+  .left-4 .stem { animation: stem-fade var(--anim-dur) ease-in-out infinite; }
+
+
+  /* Right Ear Animation */
+  .right-ear-path {
+    animation: right-ear-morph var(--anim-dur) ease-in-out infinite,
+               ear-color-r var(--anim-dur) ease-in-out infinite;
+  }
+  /* Right Ear Target: Mirror of Left
+     Base: (340, 110) to (400, 140) with Q curve
+     Tip: (420, 50)
+  */
+  @keyframes right-ear-morph {
+    0%, 20% { 
+      d: path("M440,140 L380,220 Q410,220 440,220 Z"); 
+    }
+    35%, 75% { 
+      d: path("M420,50 L340,110 Q370,115 400,140 Z"); 
+    }
+    90%, 100% { 
+      d: path("M440,140 L380,220 Q410,220 440,220 Z"); 
+    }
+  }
+  .right-4 .stem { animation: stem-fade var(--anim-dur) ease-in-out infinite; }
+
+
+  @keyframes stem-fade {
+    0%, 20% { opacity: 1; stroke-dasharray: 200; stroke-dashoffset: 0; }
+    30%, 80% { opacity: 0; stroke-dashoffset: 200; }
+    90%, 100% { opacity: 1; stroke-dashoffset: 0; }
+  }
+
+  @keyframes ear-color-l {
+    0%, 20% { fill: transparent; stroke-width: 12; }
+    35%, 75% { fill: var(--c-ear-fill); stroke-width: 6; stroke: var(--c-stroke); }
+    90%, 100% { fill: transparent; stroke-width: 12; }
+  }
+
+  @keyframes ear-color-r {
+    0%, 20% { fill: transparent; stroke-width: 12; }
+    35%, 75% { fill: var(--c-ear-fill); stroke-width: 6; stroke: var(--c-stroke); }
+    90%, 100% { fill: transparent; stroke-width: 12; }
+  }
+
+  /* FEATURES */
+  .face-features {
+    animation: features-fade var(--anim-dur) ease-in-out infinite;
+    transform-origin: 300px 200px;
+  }
+
+  @keyframes features-fade {
+    0%, 25% { opacity: 0; transform: scale(0.9); }
+    35%, 75% { opacity: 1; transform: scale(1); }
+    85%, 100% { opacity: 0; transform: scale(0.9); }
+  }
+
+  @keyframes whiskers-twitch {
+    0%, 35% { transform: rotate(0deg); }
+    40% { transform: rotate(3deg); }
+    45% { transform: rotate(-3deg); }
+    50%, 100% { transform: rotate(0deg); }
+  }
+
+  .eye {
+    fill: var(--c-features);
+  }
+
+  .eye-highlight {
+    fill: white;
+  }
+
+  .mouth {
+    stroke: var(--c-features);
+    stroke-width: 3;
+    fill: none;
+    stroke-linecap: round;
+  }
+
+  .whiskers {
+    stroke: var(--c-features);
+    stroke-width: 2;
+    stroke-linecap: round;
+    fill: none;
+    animation: whiskers-twitch var(--anim-dur) ease-in-out infinite;
+    transform-origin: 300px 200px;
+  }
+
+  /* TEXT */
+  .message-container {
+    margin-top: 1.5rem;
+  }
+
+  .fade-text {
+    color: #999;
+    font-size: 1.25rem;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .fade-text {
+      color: #aaa;
+    }
+  }
+  
+  .actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+  
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    font-size: 0.95rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .home-btn {
+    background: linear-gradient(135deg, #ed6ea0 0%, #ec8c69 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(237, 110, 160, 0.25);
+  }
+
+  .home-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(237, 110, 160, 0.35);
+  }
+
+  .archive-btn {
+    background: linear-gradient(135deg, rgba(237, 110, 160, 0.06) 0%, rgba(236, 140, 105, 0.06) 100%);
+    color: #ed6ea0;
+    border: 2px solid rgba(237, 110, 160, 0.25);
+  }
+
+  .archive-btn:hover {
+    background: linear-gradient(135deg, rgba(237, 110, 160, 0.12) 0%, rgba(236, 140, 105, 0.12) 100%);
+    border-color: rgba(237, 110, 160, 0.4);
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .home-btn {
+      background: linear-gradient(135deg, rgba(241, 139, 179, 0.9) 0%, rgba(240, 163, 135, 0.9) 100%);
+      box-shadow: 0 2px 8px rgba(241, 139, 179, 0.3);
+    }
+
+    .home-btn:hover {
+      box-shadow: 0 6px 20px rgba(241, 139, 179, 0.4);
+    }
+
+    .archive-btn {
+      background: linear-gradient(135deg, rgba(241, 139, 179, 0.08) 0%, rgba(240, 163, 135, 0.08) 100%);
+      color: #f18bb3;
+      border-color: rgba(241, 139, 179, 0.3);
+    }
+
+    .archive-btn:hover {
+      background: linear-gradient(135deg, rgba(241, 139, 179, 0.18) 0%, rgba(240, 163, 135, 0.18) 100%);
+      border-color: rgba(241, 139, 179, 0.5);
+    }
+  }
+
+/* Browser support for d: path() animation is generally good in modern browsers (Chrome/Safari/Firefox). */
+</style>
+  </TwoColumnLayout>
+</Layout>

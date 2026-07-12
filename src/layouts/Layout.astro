@@ -1,0 +1,262 @@
+---
+import type { HomeSiderType } from '@constants/enum';
+import type { BlogPost } from 'types/blog';
+
+interface Props {
+  title: string;
+  description?: string;
+  siderType?: HomeSiderType;
+  post?: BlogPost;
+  /** Override canonical URL (e.g., for fallback pages pointing to default-locale version) */
+  canonical?: string;
+  keywords?: string[];
+}
+
+import { ClientRouter } from 'astro:transitions';
+import AnimeEffects from '@components/anime/AnimeEffects.astro';
+import AnnouncementProvider from '@components/announcement/AnnouncementProvider.astro';
+import GlobalBGMPlayer from '@components/bgm/GlobalBGMPlayer';
+import ChristmasEffects from '@components/christmas/ChristmasEffects.astro';
+import FloatingGroup from '@components/layout/FloatingGroup';
+import Header from '@components/layout/Header.astro';
+import MobileDrawer from '@components/layout/MobileDrawer.astro';
+import SearchDialog from '@components/layout/SearchDialog';
+import SearchPortal from '@components/layout/SearchPortal.astro';
+import CodeBlockFullscreen from '@components/markdown/CodeBlockFullscreen';
+import DiagramFullscreen from '@components/markdown/DiagramFullscreen';
+import ImageLightbox from '@components/markdown/ImageLightbox';
+import { Toaster } from '@components/ui/sonner';
+import ChatBot from '@components/chat/ChatBot';
+import StyleEditor from '@components/dev/StyleEditor';
+import { bgmConfig, christmasConfig, seoConfig, siteConfig } from '@constants/site-config';
+import { getOgImageUrl } from '@lib/seo/og-image';
+import { getContentSiteField } from '@/i18n/content';
+import LoadingIndicator from 'astro-loading-indicator/component';
+import { SEO } from 'astro-seo';
+import { Tooltips } from 'astro-tooltips';
+import {
+  defaultLocale,
+  getAlternateUrl,
+  getHtmlLang,
+  getInitialLocale,
+  isI18nEnabled,
+  localeList,
+  localizedPath,
+  stripLocaleFromPath,
+} from '@/i18n';
+
+import '@styles/index.css';
+
+// i18n: derive locale from URL and compute BCP 47 lang tag
+const locale = getInitialLocale(
+  Astro.url.pathname,
+  Astro.request.headers.get('Accept-Language'),
+  Astro.cookies.get('i18n_locale')?.value ?? null,
+);
+
+const {
+  title = seoConfig.title,
+  description = getContentSiteField(locale, 'description') ?? seoConfig.description,
+  siderType,
+  post,
+  canonical: canonicalOverride,
+  keywords: keywordsOverride,
+} = Astro.props;
+
+const htmlLang = getHtmlLang(locale);
+
+// Detect if current page is a post page for mobile header (locale-prefix safe)
+const isPostPage = stripLocaleFromPath(Astro.url.pathname).startsWith('/post/');
+
+// OGP image: use post cover if available, otherwise use default from config, fallback to avatar
+const ogImage = getOgImageUrl(post?.data.cover, Astro.site);
+
+// Pre-compute i18n URLs for <head> links
+const rssHref = new URL(localizedPath('/rss.xml', locale), Astro.site).href;
+const hreflangLinks = localeList.map((loc) => ({
+  lang: getHtmlLang(loc),
+  href: new URL(getAlternateUrl(Astro.url.pathname, loc), Astro.site).href,
+}));
+const xDefaultHref = new URL(getAlternateUrl(Astro.url.pathname, defaultLocale), Astro.site).href;
+const canonicalHref = canonicalOverride ?? Astro.url.href;
+
+const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
+---
+
+<!doctype html>
+<html transition:name="root" lang={htmlLang} class="vertical-scrollbar">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <meta name="generator" content={Astro.generator} />
+    <!-- 预加载头图海报：确保 header 背景与其他组件同步渲染 -->
+    <link rel="preload" as="image" href="/img/top-poster.webp" fetchpriority="high" />
+    {/* Async load rounded fonts — Japanese pages use Gen Jyuu Gothic P, others use ChillRoundF (fix #113) */}
+    {locale === 'ja' ? (
+      <>
+        <link rel="stylesheet" href="/fonts/GenJyuuGothic-P-Regular/result.css" media="print" onload="this.setAttribute('media','all')" />
+        <link rel="stylesheet" href="/fonts/GenJyuuGothic-P-Bold/result.css" media="print" onload="this.setAttribute('media','all')" />
+      </>
+    ) : (
+      <>
+        <link rel="stylesheet" href="/fonts/ChillRoundFRegular/result.css" media="print" onload="this.setAttribute('media','all')" />
+        <link rel="stylesheet" href="/fonts/ChillRoundFBold/result.css" media="print" onload="this.setAttribute('media','all')" />
+      </>
+    )}
+
+    <ClientRouter />
+    <LoadingIndicator color="#e9536a" />
+    <Tooltips />
+
+    <!-- SEO 元数据由 astro-seo 管理 -->
+    <SEO
+      title={title}
+      description={description}
+      canonical={canonicalHref}
+      openGraph={{
+        basic: {
+          title: title,
+          type: 'website',
+          image: ogImage || '',
+          url: Astro.url.href,
+        },
+        optional: {
+          siteName: siteConfig.name,
+          description: description,
+        },
+      }}
+      twitter={{
+        card: ogImage ? 'summary_large_image' : 'summary',
+        title: title,
+        description: description,
+        ...(ogImage && { image: ogImage }),
+      }}
+      extend={{
+        meta: [{ name: 'author', content: siteConfig.author || '' }],
+      }}
+    />
+    {/* astro-seo 暂不支持管理 keywords */}
+    <meta name="keywords" content={keywords.join(', ')} />
+
+    <link rel="alternate" type="application/rss+xml" title={siteConfig.title} href={rssHref} />
+    {/* hreflang alternate links for SEO — only output when multiple locales are configured */}
+    {isI18nEnabled && hreflangLinks.map(({ lang, href }) => (
+      <link rel="alternate" hreflang={lang} href={href} />
+    ))}
+    {isI18nEnabled && <link rel="alternate" hreflang="x-default" href={xDefaultHref} />}
+
+    <script is:inline lang="ts">
+      // 主题系统 - 立即执行以防止 FOUC（无样式内容闪烁）
+      // 优先级：1. 用户手动选择 > 2. 默认暗色
+      (function() {
+        function getTheme() {
+          // 用户明确选择了主题
+          if (localStorage.theme === 'dark') return 'dark';
+          if (localStorage.theme === 'light') return 'light';
+          // 未设置，默认暗色
+          return 'dark';
+        }
+
+        function applyTheme(theme) {
+          var root = document.documentElement;
+          root.classList.toggle('dark', theme === 'dark');
+          root.dataset.theme = theme; // For astro-mermaid autoTheme
+        }
+
+        // 立即应用主题
+        applyTheme(getTheme());
+
+        // 监听系统主题偏好变化
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+          // 仅当用户未明确选择主题时自动切换
+          if (!('theme' in localStorage)) {
+            applyTheme(getTheme());
+          }
+        });
+
+        // View Transition 切换页面后重新应用主题（在 DOM 渲染前）
+        document.addEventListener('astro:after-swap', function() {
+          applyTheme(getTheme());
+        });
+      })();
+    </script>
+    <script is:inline define:vars={{ christmasFeatureEnabled: christmasConfig.enabled }}>
+      // 立即执行圣诞状态检查 否则彩灯等会闪烁
+      (function () {
+        // 如果构建时配置关闭，则始终不启用
+        if (!christmasFeatureEnabled) {
+          document.documentElement.classList.remove('christmas');
+          return;
+        }
+        // 否则使用用户偏好
+        var stored = localStorage.getItem('christmas-enabled');
+        var enabled = stored !== 'false'; // 默认启用
+        document.documentElement.classList.toggle('christmas', enabled);
+      })();
+    </script>
+
+    <!-- 子页面可通过 slot="head" 注入额外的 head 内容（如 JSON-LD） -->
+    <slot name="head" />
+
+
+
+    <script>
+      import '../lib/mermaid-nav-fix';
+      import { initializeCodePenEmbeds } from '../scripts/codepen-embed';
+      // 首屏由模块自身执行；这里只负责 Astro 客户端导航后的重初始化
+      document.addEventListener('astro:page-load', initializeCodePenEmbeds);
+    </script>
+  </head>
+  <body>
+    <ChristmasEffects transition:persist="christmas-snowfall" />
+    <AnimeEffects transition:persist="anime-effects" />
+    <div class="flex min-h-screen flex-col text-black dark:text-white">
+      <Header isPostPage={isPostPage} tocNumbering={post?.data.tocNumbering ?? true} />
+      <main class="relative flex grow flex-col gap-4">
+        {(<slot />)}
+      </main>
+      {bgmConfig.enabled && bgmConfig.audio.length > 0 && (
+        <div transition:persist="global-bgm">
+          <GlobalBGMPlayer client:only="react" audioGroups={bgmConfig.audio} metingApi={bgmConfig.metingApi} />
+        </div>
+      )}
+      <FloatingGroup client:only="react" />
+      <MobileDrawer type={siderType} post={post} />
+      <SearchDialog client:idle />
+      <SearchPortal />
+      <CodeBlockFullscreen client:idle />
+      <DiagramFullscreen client:idle />
+      <ImageLightbox client:idle />
+      <Toaster client:idle />
+      <AnnouncementProvider />
+      <ChatBot client:load />
+      {/* 开发环境专用：右键页面任意位置即可编辑样式 / 主题变量；生产构建自动剔除 */}
+      {import.meta.env.DEV && <StyleEditor client:only="react" />}
+    </div>
+  </body>
+</html>
+
+<style is:global>
+  /* Progressive enhancement: scroll-state is experimental, browsers that don't support it will just not show the feather mask */
+  @supports (container-type: scroll-state) {
+    .scroll-feather-mask {
+      container-type: scroll-state;
+    }
+
+  @container scroll-state(scrollable: bottom) {
+      .scroll-feather-mask::after {
+        content: '';
+        background: linear-gradient(to bottom, transparent 0%, var(--gradient-bg-start) var(--mask-end-percent, 50%), var(--gradient-bg-start) var(--mask-start-percent, 100%));
+        position: absolute;
+        top: var(--mask-top, auto);
+        left: var(--mask-left, 0);
+        right: var(--mask-right, 0);
+        bottom: var(--mask-bottom, 0);
+        z-index: 10;
+        display: block;
+        height: var(--mask-height, 5rem);
+      }
+    }
+  }
+</style>

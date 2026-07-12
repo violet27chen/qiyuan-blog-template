@@ -1,0 +1,80 @@
+# =============================================================================
+# i18n Content Translations
+# =============================================================================
+# Non-default locale translations for content-level strings.
+# Default locale (zh) values come from config/site.yaml — only add overrides here.
+#
+# Structure:
+#   <locale>:
+#     categories:    { <slug>: <translated name> }
+#     series:        { <slug>: { label?, fullName?, description? } }
+#     featuredCategories: { <link>: { label?, description? } }
+# =============================================================================
+
+en:
+  site:
+    subtitle: Tech, writing, and daily inspiration
+    description: My Blog — tech, writing, and daily inspiration
+  categories:
+    life: Life
+    note: Notes
+    tools: Tools
+    weekly: Weekly
+    front-end: Frontend
+    resources: Resources
+
+  series:
+    weekly:
+      label: My Weekly
+      fullName: My Tech Weekly
+
+  featuredCategories:
+    life:
+      label: Life
+      description: Life journals and essays
+    note:
+      label: Notes
+      description: Technical and study notes
+    note/front-end:
+      label: Frontend
+      description: Frontend technologies
+    note/resources:
+      label: Resources
+      description: Cloud drive resource sharing
+    tools:
+      label: Tools
+      description: Tool usage and productivity
+
+ja:
+  site:
+    subtitle: 技術、執筆、日常のインスピレーション
+    description: 祈願ブログ — 技術、執筆、日常のインスピレーション
+  categories:
+    life: 日常
+    note: ノート
+    tools: ツール
+    weekly: 週刊
+    front-end: フロントエンド
+    resources: リソース
+
+  series:
+    weekly:
+      label: 週間ダイジェスト
+      fullName: テック週間ダイジェスト
+
+  featuredCategories:
+    life:
+      label: 日常
+      description: 日常の記録とエッセイ
+    note:
+      label: ノート
+      description: 技術と学習のノート
+    note/front-end:
+      label: フロントエンド
+      description: フロントエンド技術
+    note/resources:
+      label: リソース
+      description: クラウドドライブのリソース共有
+    tools:
+      label: ツール
+      description: ツールの使い方と生産性

@@ -1,0 +1,9 @@
+/**
+ * LQIP (Low Quality Image Placeholder) styles
+ * Simple gradient backgrounds extracted from image colors
+ */
+
+/* Fallback for external images without LQIP */
+.lqip-fallback {
+  background-color: hsl(var(--muted));
+}

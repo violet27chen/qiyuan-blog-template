@@ -1,0 +1,18 @@
+# 资源站数据源（由 npm run sync:resources 从后端同步，或手动维护）
+# 模板默认清空，部署后填入你自己的资源即可。
+imageBase: https://your-resources-domain.com
+syncedAt: null
+categories:
+  - 工具
+  - 资源
+  - 学习资料
+products: []
+# 单条资源示例（取消注释并修改）：
+# - id: 1
+#   name: 示例资源
+#   description: 资源简介
+#   category: 工具
+#   cloudType: quark
+#   link: https://pan.quark.cn/s/xxxxxxxx
+#   image: /api/images/product_xxxx.png
+#   createdAt: 2026-07-12T00:00:00.000Z

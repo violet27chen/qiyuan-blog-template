@@ -1,0 +1,25 @@
+---
+import Layout from '@layouts/Layout.astro';
+import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
+import Cover from '@components/ui/cover/Cover.astro';
+import HomeSider from '@components/layout/HomeSider.astro';
+import TempMail from '@components/tempmail/TempMail.tsx';
+import { tempMailConfig, siteConfig } from '@constants/site-config';
+import { CONTENT_PADDING } from '@constants/layout';
+import { t, getLocaleFromUrl } from '@/i18n';
+
+const locale = getLocaleFromUrl(Astro.url.pathname);
+const title = `${t(locale, 'tempMail.title')} | ${siteConfig.title}`;
+const description = t(locale, 'tempMail.description');
+---
+
+<Layout title={title} description={description}>
+  <TwoColumnLayout>
+    <Cover slot="cover" title={t(locale, 'tempMail.title')} />
+    <HomeSider slot="sider" />
+    <div class={`bg-gradient-start shadow-box tablet:shadow-none flex flex-col overflow-hidden ${CONTENT_PADDING.standard}`}>
+      <p class="mb-6 text-muted-foreground">{description}</p>
+      <TempMail client:load />
+    </div>
+  </TwoColumnLayout>
+</Layout>

@@ -1,0 +1,40 @@
+---
+// This import is aliased in astro.config.mjs - will be replaced with Noop when christmas disabled
+import { SnowfallCanvas } from '@components/christmas/SnowfallCanvas';
+import { christmasConfig } from '@constants/site-config';
+
+const { snowfall } = christmasConfig;
+---
+
+{
+  christmasConfig.enabled && christmasConfig.features.snowfall && (
+    <>
+      {/* 背景雪 - 在内容后面 */}
+      <SnowfallCanvas
+        client:only="react"
+        speed={snowfall.speed}
+        intensity={snowfall.intensity}
+        mobileIntensity={snowfall.mobileIntensity}
+        maxLayers={snowfall.maxLayers}
+        maxIterations={snowfall.maxIterations}
+        mobileMaxLayers={snowfall.mobileMaxLayers}
+        mobileMaxIterations={snowfall.mobileMaxIterations}
+        zIndex={1}
+        layerPosition="background"
+      />
+      {/* 前景雪 - 在内容前面 */}
+      <SnowfallCanvas
+        client:only="react"
+        speed={snowfall.speed}
+        intensity={snowfall.intensity}
+        mobileIntensity={snowfall.mobileIntensity}
+        maxLayers={snowfall.maxLayers}
+        maxIterations={snowfall.maxIterations}
+        mobileMaxLayers={snowfall.mobileMaxLayers}
+        mobileMaxIterations={snowfall.mobileMaxIterations}
+        zIndex={50}
+        layerPosition="foreground"
+      />
+    </>
+  )
+}

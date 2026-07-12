@@ -1,0 +1,175 @@
+/* Markdown rendering styles for AI chat assistant messages.
+   Scoped under .chat-markdown so they only affect chat content.
+   Colors use the site's theme CSS variables (--primary, --border, --muted-foreground,
+   --muted) so they adapt automatically to light / dark / seasonal themes. */
+
+.chat-markdown {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  color: hsl(var(--foreground));
+}
+
+.chat-markdown > :first-child { margin-top: 0; }
+.chat-markdown > :last-child { margin-bottom: 0; }
+
+.chat-markdown p { margin: 0.5rem 0; }
+.chat-markdown h1,
+.chat-markdown h2,
+.chat-markdown h3,
+.chat-markdown h4,
+.chat-markdown h5,
+.chat-markdown h6 {
+  margin: 0.75rem 0 0.4rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: hsl(var(--foreground));
+}
+.chat-markdown h1 { font-size: 1.2rem; }
+.chat-markdown h2 { font-size: 1.1rem; }
+.chat-markdown h3 { font-size: 1rem; }
+.chat-markdown h4 { font-size: 0.95rem; }
+
+.chat-markdown ul,
+.chat-markdown ol { margin: 0.5rem 0; padding-left: 1.4rem; }
+.chat-markdown li { margin: 0.2rem 0; }
+.chat-markdown ul { list-style: disc; }
+.chat-markdown ol { list-style: decimal; }
+.chat-markdown li > ul,
+.chat-markdown li > ol { margin: 0.2rem 0; }
+
+.chat-markdown strong { font-weight: 600; }
+
+.chat-markdown a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.chat-markdown a:hover { opacity: 0.85; }
+
+.chat-markdown blockquote {
+  border-left: 3px solid hsl(var(--primary));
+  padding: 0.1rem 0 0.1rem 0.75rem;
+  margin: 0.5rem 0;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Inline code */
+.chat-markdown code {
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.3rem;
+  font-size: 0.8125rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.chat-markdown pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+/* Tables */
+.chat-markdown table {
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  width: 100%;
+  font-size: 0.8125rem;
+}
+.chat-markdown th,
+.chat-markdown td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+}
+.chat-markdown th { background: hsl(var(--muted) / 0.5); font-weight: 600; }
+
+.chat-markdown img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 0.25rem 0;
+}
+.chat-markdown hr {
+  border: none;
+  border-top: 1px solid hsl(var(--border));
+  margin: 0.75rem 0;
+}
+.chat-markdown input[type="checkbox"] { margin-right: 0.35rem; }
+
+/* Code block with header + copy button (kept as a dark code surface for readability) */
+.chat-codeblock {
+  margin: 0.5rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+}
+.chat-codeblock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0.75rem;
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.chat-codeblock-lang { text-transform: uppercase; letter-spacing: 0.03em; }
+.chat-codeblock-copy {
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  transition: color 0.15s, background 0.15s;
+}
+.chat-codeblock-copy:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.06);
+}
+.chat-codeblock pre {
+  margin: 0 !important;
+  background: transparent !important;
+  overflow-x: auto;
+}
+.chat-codeblock pre code {
+  background: transparent !important;
+  color: #e2e8f0;
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  line-height: 1.6;
+}
+
+/* Streaming "typing" indicator — refined three-dot wave in the brand accent.
+   Uses --primary so it follows the active theme (light / dark / seasonal). */
+.chat-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.1rem;
+}
+.chat-typing span {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  animation: chat-typing-wave 1.2s ease-in-out infinite;
+}
+.chat-typing span:nth-child(2) { animation-delay: 0.15s; }
+.chat-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes chat-typing-wave {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-0.25rem);
+    opacity: 1;
+  }
+}

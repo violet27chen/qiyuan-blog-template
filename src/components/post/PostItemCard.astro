@@ -1,0 +1,265 @@
+---
+// 导入所需的库和类型
+import { Badge } from '@components/ui/badge';
+import { Button } from '@components/ui/button';
+import { ScrollableRow } from '@components/ui/ScrollableRow';
+import { Routes } from '@constants/router';
+import { createArticleStatsConfig, defaultCoverList, kvArticlePageViews } from '@constants/site-config';
+import { buildCategoryPath, buildTagPath, getCategoryArr, translateCategoryName } from '@lib/content';
+import { displayDate } from '@lib/date';
+import { getLqipProps } from '@lib/lqip';
+import { routeBuilder } from '@lib/route';
+import { cn } from '@lib/utils';
+import { Icon } from 'astro-icon/components';
+import KvPVSpan from '@/components/kv/KvPVSpan';
+import UmamiPVSpan from '@/components/umami/UmamiPVSpan';
+import { defaultLocale, getLocaleFromUrl, getLocaleLabel, localizedPath, t } from '@/i18n';
+import type { PostCardData } from '@/types/blog';
+
+export interface PostItemCardProps {
+  data: PostCardData;
+  leftClip?: boolean;
+  randomCover: string;
+  showTags?: boolean;
+  hideCover?: boolean; // 隐藏图片，让内容铺满
+  isSimple?: boolean; // 是否简单模式
+  isUniformPosition?: boolean; // 是否统一图片位置（非交替模式）
+}
+
+const {
+  randomCover,
+  data,
+  leftClip = true,
+  hideCover: hideCoverProp,
+  showTags: showTagsProp,
+  isSimple = false,
+  isUniformPosition = false,
+} = Astro.props as PostItemCardProps;
+
+const showTags = showTagsProp ?? !isSimple;
+const hideCover = hideCoverProp ?? isSimple;
+
+const { cover, date, categories, title, draft, description, slug, link, tags, wordCount, readingTime, postLocale } = data ?? {};
+
+const locale = getLocaleFromUrl(Astro.url.pathname);
+const finalCover = cover ?? randomCover ?? defaultCoverList[0];
+const href = localizedPath(routeBuilder(Routes.Post, { slug, link, title }), locale);
+const isDraft = import.meta.env.DEV && draft === true;
+const isFallback = postLocale != null && locale !== defaultLocale && postLocale !== locale;
+
+const categoryArr = getCategoryArr(categories?.[0]);
+const categoryLink = localizedPath(buildCategoryPath(categoryArr), locale);
+const categoryStr = categoryArr?.length ? translateCategoryName(categoryArr[categoryArr.length - 1], locale) : '';
+
+// 直接使用 description（已在 PostCardData 中计算好）
+const postDescription = description ?? '';
+
+// 获取 LQIP 样式用于图片占位符
+const lqipProps = getLqipProps(finalCover);
+
+// Stagger padding amounts for uniform position mode (following diagonal edge)
+// Only applied when images are on left, where the diagonal faces the content
+const staggerAmounts = ['pl-0', 'pl-2', 'pl-4', 'pl-6'] as const;
+
+/**
+ * Get stagger padding class for a content row
+ * @param rowIndex - The row index (0-3)
+ * @returns Tailwind padding class or empty string
+ */
+function getStaggerPadding(rowIndex: number): string {
+  // Only apply stagger for left image position (diagonal faces content)
+  if (!isUniformPosition || hideCover || !leftClip) return '';
+  return staggerAmounts[rowIndex];
+}
+
+const pageStatsConfig = createArticleStatsConfig(href);
+---
+
+<div
+  class={cn(
+    'hover:shadow-card-darker group text-card-foreground shadow-card relative flex rounded-lg bg-white transition-shadow md:flex-col dark:bg-transparent',
+    'post-item-card',
+  )}
+>
+  {
+    !hideCover && (
+      <a
+        aria-label="post-link"
+        href={href}
+        style={lqipProps.style}
+        class={cn(
+          'md:clip-path-none relative h-46.5 max-h-46.5 w-[calc(50%-2rem)] overflow-hidden md:w-auto',
+          leftClip ? 'rounded-s-lg clip-path-post-img-left order-1' : 'rounded-e-lg clip-path-post-img-right order-2',
+          'md:clip-path-none md:order-0',
+          lqipProps.class,
+        )}
+      >
+        <img
+          src={typeof finalCover === 'object' && 'src' in finalCover ? finalCover.src : finalCover}
+          loading="lazy"
+          alt="post cover"
+          class="h-full w-full cursor-pointer object-cover transition duration-500 group-hover:scale-110 group-hover:rotate-3"
+        />
+      </a>
+    )
+  }
+  <div
+    class={cn(
+      'flex flex-col gap-2 pb-2 md:pb-4 pt-4 md:pt-1',
+      'px-4 md:px-4',
+      // Reduce margin on the side adjacent to image diagonal when uniform left position
+      isUniformPosition && !hideCover && leftClip && '-ml-3',
+      hideCover ? 'w-full' : 'w-[calc(50%+2rem)] md:w-full',
+      !hideCover && (leftClip ? 'order-2' : 'order-1'),
+      'md:order-0',
+    )}
+  >
+    <ScrollableRow
+      client:visible
+      className={cn('w-full', { 'order-2 pb-3 md:pb-0': isSimple }, getStaggerPadding(0), 'md:pl-0 md:pr-0')}
+      innerClassName="items-center justify-between gap-4 w-full"
+      fadeWidth={20}
+    >
+      {
+        categoryStr && (
+          <a href={categoryLink} class="flex-center hover:text-blue text-muted-foreground shrink-0 text-xs whitespace-nowrap transition duration-300">
+            <Icon name="gg:flag" />
+            {categoryStr}
+          </a>
+        )
+      }
+      <div class="text-muted-foreground flex shrink-0 items-center gap-3 text-xs">
+        {
+          date ? (
+            <p class="flex-center gap-1 whitespace-nowrap">
+              <Icon name="fa6-solid:calendar-days" />
+              {displayDate.date(date)}
+            </p>
+          ) : null
+        }
+        <p class="flex-center gap-1 whitespace-nowrap">
+          <Icon name="fa6-solid:pen-nib" />
+          {t(locale, 'post.wordCount', { count: wordCount })}
+        </p>
+        <button
+          class="flex-center gap-1 whitespace-nowrap md:hidden"
+          title={t(locale, 'post.readingTimeTooltip', { time: readingTime })}
+          data-tooltip-placement="top"
+        >
+          <Icon name="fa6-solid:clock" />
+          {readingTime}
+        </button>
+
+        {pageStatsConfig && (
+          <span class="flex-center gap-1 whitespace-nowrap">
+            <Icon name="ri:eye-line" class="h-4 w-4" />
+            <UmamiPVSpan client:visible statsConfig={pageStatsConfig} />
+            {t(locale, 'stats.pageviews')}
+          </span>
+        )}
+
+        {!pageStatsConfig && kvArticlePageViews && (
+          <span class="flex-center gap-1 whitespace-nowrap">
+            <Icon name="ri:eye-line" class="h-4 w-4" />
+            <KvPVSpan client:visible mode="page" path={href} />
+            {t(locale, 'stats.pageviews')}
+          </span>
+        )}
+
+      </div>
+    </ScrollableRow>
+    <div class={cn('mt-1 flex flex-col space-y-1.5 p-0', getStaggerPadding(1), 'md:pl-0 md:pr-0')}>
+      <div class="flex items-center gap-2">
+        <a href={href} aria-label="post-link" class="min-w-0 flex-1"
+          ><h2 class="text-primary hover:text-blue line-clamp-1 truncate text-xl font-bold transition-colors duration-300">
+            {title}
+          </h2>
+        </a>
+        {
+          isDraft && (
+            <Badge className="bg-yellow-700 border border-yellow-600/20 gap-1 text-white shrink-0 hover:bg-yellow-500 whitespace-nowrap transition-colors duration-300 ">
+              <Icon name="fa6-solid:file-pen" class="h-3 w-3" />
+              {t(locale, 'post.draft')}
+            </Badge>
+          )
+        }
+        {
+          isFallback && (
+            <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 gap-1 shrink-0 whitespace-nowrap transition-colors duration-300">
+              <Icon name="ri:translate-2" class="h-3 w-3" />
+              {getLocaleLabel(postLocale ?? defaultLocale)}
+            </Badge>
+          )
+        }
+      </div>
+    </div>
+    <p
+      class={cn(
+        'text-muted-foreground line-clamp-3 h-15 text-sm md:h-auto md:max-h-15',
+        { 'line-clamp-2 h-10 md:max-h-10': isSimple },
+        getStaggerPadding(2),
+        'md:pl-0 md:pr-0',
+      )}
+    >
+      {postDescription}
+    </p>
+    {
+      showTags && tags?.length && (
+        <ScrollableRow
+          client:visible
+          className={cn(
+            'pt-1 pb-1',
+            leftClip ? 'mr-18' : 'ml-18',
+            'md:mx-0',
+            getStaggerPadding(3),
+            'md:pl-0 md:pr-0',
+          )}
+          innerClassName="gap-2"
+          fadeWidth={16}
+        >
+          {tags.map((tag: string) => (
+            <a href={localizedPath(buildTagPath(tag), locale)}>
+              <Badge
+                className='hover:text-badge-primary/80 shrink-0 cursor-pointer gap-0.5 border-none px-1 text-xs font-bold whitespace-nowrap transition-colors duration-300 flex'
+                variant="outline"
+              >
+                <Icon name="fa6-solid:tags" /> {tag}
+              </Badge>
+            </a>
+          ))}
+        </ScrollableRow>
+      )
+    }
+    <a
+      href={href}
+      aria-label="more info"
+      class={cn('absolute -bottom-1', hideCover ? '-right-1' : leftClip ? '-right-1' : '-left-1', 'md:left-auto md:-right-1')}
+    >
+      <Button
+        className={cn(
+          'bg-gradient-shoka-button rounded-2xl transition-all hover:translate-y-1 hover:scale-105 md:h-7 md:px-2 md:py-1 md:text-xs',
+          hideCover
+            ? 'rounded-se-none rounded-es-none hover:translate-x-1'
+            : leftClip
+              ? 'rounded-se-none rounded-es-none hover:translate-x-1'
+              : 'rounded-ss-none rounded-ee-none hover:-translate-x-1',
+          'md:rounded-ss-2xl md:rounded-se-none md:rounded-ee-2xl md:rounded-es-none md:hover:translate-x-1',
+        )}
+      >
+        more...
+      </Button>
+    </a>
+  </div>
+</div>
+
+<style>
+  /* 圣诞特效开启时的卡片样式 */
+  :global(html.christmas) .post-item-card {
+    position: relative;
+    z-index: 5;
+  }
+
+  :global(html.christmas.dark) .post-item-card {
+    background-color: #1a1512;
+  }
+</style>

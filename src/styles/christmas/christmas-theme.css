@@ -1,0 +1,66 @@
+/* 圣诞配色方案 - 当 .christmas 类在 html 上时生效 */
+
+/* 亮色模式圣诞配色 */
+.christmas:root {
+  /* 主色调改为圣诞红 */
+  --primary: 0 70% 45%;
+  --primary-foreground: 0 0% 100%;
+
+  /* 圣诞专用颜色 */
+  --christmas-red: 0 70% 45%;
+  --christmas-green: 150 60% 35%;
+  --christmas-gold: 43 75% 55%;
+  --christmas-snow: 0 0% 98%;
+
+  /* 渐变背景调整为淡红绿色调 */
+  --gradient-bg-start: #fff9f9;
+  --gradient-bg-end: #f0f8f0;
+  --gradient-header: linear-gradient(-225deg, #e8f5e9 0%, #ffebee 100%);
+
+  /* 按钮渐变 */
+  --gradient-button: linear-gradient(-225deg, #c62828 0%, #2e7d32 100%);
+}
+
+/* 深色模式圣诞配色 */
+.christmas.dark {
+  --primary: 0 65% 55%;
+  --primary-foreground: 0 0% 100%;
+
+  /* 深色模式圣诞专用颜色 */
+  --christmas-red: 0 65% 55%;
+  --christmas-green: 150 55% 50%;
+  --christmas-gold: 43 70% 60%;
+
+  /* 深色模式渐变背景 */
+  --gradient-bg-start: #1a1512;
+  --gradient-bg-end: #0d1a0d;
+  --gradient-header: linear-gradient(-225deg, #1a2e1c 0%, #2e1a1c 100%);
+
+  /* 深色模式按钮渐变 */
+  --gradient-button: linear-gradient(-225deg, #ef5350 0%, #66bb6a 100%);
+}
+
+/* 圣诞工具类 */
+.christmas .text-christmas-red {
+  color: hsl(var(--christmas-red));
+}
+
+.christmas .text-christmas-green {
+  color: hsl(var(--christmas-green));
+}
+
+.christmas .text-christmas-gold {
+  color: hsl(var(--christmas-gold));
+}
+
+.christmas .bg-christmas-red {
+  background-color: hsl(var(--christmas-red));
+}
+
+.christmas .bg-christmas-green {
+  background-color: hsl(var(--christmas-green));
+}
+
+.christmas .bg-christmas-gold {
+  background-color: hsl(var(--christmas-gold));
+}

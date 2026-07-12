@@ -1,0 +1,150 @@
+@import "./reset.css";
+@import "tailwindcss";
+@import "./utils.css";
+@config "../../../tailwind.config.mjs";
+
+@font-face {
+  font-family: "Bear Days";
+  src: url("/fonts/bear-days.woff2") format("woff2");
+  font-display: swap;
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  * {
+    @apply border-border;
+  }
+  button {
+    @apply cursor-pointer;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+    background: 
+      linear-gradient(to bottom, var(--bg-overlay), var(--bg-overlay)),
+      url('/img/background.gif') no-repeat center center fixed;
+    background-size: cover;
+    scroll-behavior: smooth;
+    letter-spacing: 0.02em;
+    color: hsl(var(--foreground));
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "寒蝉全圆体", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  /* Japanese pages: use Gen Jyuu Gothic P for correct JIS glyphs (fix #113) */
+  :lang(ja) {
+    font-family: "Gen Jyuu Gothic P", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  :lang(ja) :is(h1, h2, h3, h4, h5, h6) {
+    font-family: "Gen Jyuu Gothic P", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  html {
+    scrollbar-gutter: stable;
+    background: 
+      linear-gradient(to bottom, var(--bg-overlay), var(--bg-overlay)),
+      url('/img/background.gif') no-repeat center center fixed;
+    background-size: cover;
+    overflow: auto;
+  }
+
+  .vertical-scrollbar::-webkit-scrollbar {
+    display: block;
+    width: var(--scrollbar-width, 0.25rem);
+    background: hsl(var(--background)); /* background color */
+  }
+
+  .vertical-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.5); /* thumb color */
+    border-radius: 0.5rem;
+  }
+
+  .horizontal-scrollbar::-webkit-scrollbar {
+    display: block;
+    height: var(--scrollbar-width, 0.25rem);
+    background: hsl(var(--background)); /* background color */
+  }
+
+  .horizontal-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.5); /* thumb color */
+    border-radius: 0.5rem;
+  }
+
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+/* utils */
+@layer components {
+  .shoka-button-shadow {
+    box-shadow: 0 0 0.75rem var(--color-pink-a3);
+    &:hover {
+      box-shadow: 0 0 0.75rem var(--color-pink);
+    }
+  }
+  #site-header {
+    @apply relative translate-y-0 text-white transition-transform duration-300;
+
+    /* Pseudo-element for gradient background with opacity transition */
+    &::before {
+      content: "";
+      @apply pointer-events-none absolute inset-0 -z-1 bg-gradient-header opacity-0 transition-opacity duration-300 ease-out;
+    }
+
+    button,
+    a {
+      @apply shadow-text;
+      &::after {
+        transition-duration: 400ms;
+        @apply bg-white;
+      }
+    }
+    .nav-dropdown a {
+      text-shadow: none;
+    }
+  }
+  .clip-path-post-img-left {
+    clip-path: polygon(0 0, 92% 0%, 100% 100%, 0% 100%);
+  }
+  .clip-path-post-img-right {
+    clip-path: polygon(0 0%, 100% 0%, 100% 100%, 8% 100%);
+  }
+  .logo-text {
+    font-size: 2rem;
+    text-shadow:
+      3px 4px 2px #060000,
+      -1px -1px 0px #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    line-height: 0.95;
+    text-align: center;
+    font-family: "Bear Days", sans-serif;
+    font-weight: 700;
+    color: #e9546b;
+  }
+}
+
+.dark .logo-text {
+  color: #ed788c;
+}

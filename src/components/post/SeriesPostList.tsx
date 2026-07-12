@@ -1,0 +1,63 @@
+/**
+ * SeriesPostList - 显示系列文章列表
+ */
+
+import { Routes } from '@constants/router';
+import { useTranslation } from '@hooks/useTranslation';
+import { routeBuilder } from '@lib/route';
+import { cn } from '@lib/utils';
+import { localizedPath } from '@/i18n';
+import type { PostRef } from '@/types/blog';
+
+interface SeriesPostListProps {
+  posts: PostRef[];
+  currentPostSlug?: string;
+  className?: string;
+  locale?: string;
+}
+
+export function SeriesPostList({ posts, currentPostSlug, className, locale }: SeriesPostListProps) {
+  const { t } = useTranslation();
+  if (!posts?.length) {
+    return <div className="py-8 text-center text-muted-foreground text-sm">{t('series.noPosts')}</div>;
+  }
+
+  return (
+    <div className={cn('flex flex-col gap-1 md:pb-3 md:pl-2', className)}>
+      {posts.map((post) => {
+        const href = localizedPath(routeBuilder(Routes.Post, post), locale);
+        const isActive = post.slug === currentPostSlug;
+
+        return (
+          <a
+            key={post.slug}
+            href={href}
+            className={cn(
+              'group relative flex items-center gap-3 rounded-md px-1 py-2 transition-colors',
+              'hover:bg-accent/50',
+              isActive && 'font-medium text-primary',
+            )}
+          >
+            {/* 圆点指示器 */}
+            <span
+              className={cn(
+                'size-2 shrink-0 rounded-full transition-colors',
+                isActive ? 'bg-primary' : 'bg-muted-foreground/40 group-hover:bg-muted-foreground/60',
+              )}
+            />
+
+            {/* 文章标题 */}
+            <span
+              className={cn(
+                'line-clamp-2 flex-1 text-sm leading-relaxed transition-colors',
+                isActive ? 'text-primary' : 'text-foreground group-hover:text-primary',
+              )}
+            >
+              {post.title}
+            </span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}

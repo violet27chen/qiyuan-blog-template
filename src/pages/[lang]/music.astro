@@ -1,0 +1,10 @@
+---
+import { getLocaleStaticPaths } from '../_shared/utils';
+import MusicPage from '../music.md';
+export const getStaticPaths = getLocaleStaticPaths;
+const { lang } = Astro.params;
+const MusicEn = (await import('../music.en.md')).default;
+const MusicJa = (await import('../music.ja.md')).default;
+const Page = lang === 'en' ? MusicEn : lang === 'ja' ? MusicJa : MusicPage;
+---
+<Page />

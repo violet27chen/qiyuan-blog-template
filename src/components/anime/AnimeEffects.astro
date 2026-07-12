@@ -1,0 +1,31 @@
+---
+import { InteractiveParticles } from '@components/anime/InteractiveParticles';
+import { SakuraCanvas } from '@components/anime/SakuraCanvas';
+import { animeConfig } from '@constants/site-config';
+
+const { features, sakura } = animeConfig;
+const interactiveEnabled = animeConfig.enabled && (features.clickBurst || features.cursorTrail);
+---
+
+{
+  animeConfig.enabled && features.sakuraFall && (
+    <SakuraCanvas
+      client:only="react"
+      intensity={sakura.intensity}
+      mobileIntensity={sakura.mobileIntensity}
+      speed={sakura.speed}
+      zIndex={40}
+    />
+  )
+}
+
+{
+  interactiveEnabled && (
+    <InteractiveParticles
+      client:only="react"
+      clickBurst={features.clickBurst}
+      cursorTrail={features.cursorTrail}
+      zIndex={60}
+    />
+  )
+}

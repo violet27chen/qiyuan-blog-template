@@ -1,0 +1,25 @@
+---
+import Layout from '@layouts/Layout.astro';
+import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
+import Cover from '@components/ui/cover/Cover.astro';
+import HomeSider from '@components/layout/HomeSider.astro';
+import Shorten from '@components/shorten/Shorten.tsx';
+import { siteConfig } from '@constants/site-config';
+import { CONTENT_PADDING } from '@constants/layout';
+import { t, getLocaleFromUrl } from '@/i18n/utils';
+
+const locale = getLocaleFromUrl(Astro.url.pathname);
+const title = `${t(locale, 'nav.shorten')} | ${siteConfig.title}`;
+const description = t(locale, 'shorten.pageDesc');
+---
+
+<Layout title={title} description={description}>
+  <TwoColumnLayout>
+    <Cover slot="cover" title={t(locale, 'nav.shorten')} />
+    <HomeSider slot="sider" />
+    <div class={`bg-gradient-start shadow-box tablet:shadow-none flex flex-col overflow-hidden ${CONTENT_PADDING.standard}`}>
+      <p class="mb-6 text-muted-foreground">{description}</p>
+      <Shorten client:load />
+    </div>
+  </TwoColumnLayout>
+</Layout>

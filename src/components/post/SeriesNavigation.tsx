@@ -1,0 +1,108 @@
+/**
+ * SeriesNavigation - 系列文章上一篇/下一篇导航
+ */
+import { Routes } from '@constants/router';
+import { useIsMounted } from '@hooks/useIsMounted';
+import { useTranslation } from '@hooks/useTranslation';
+import { routeBuilder } from '@lib/route';
+import { cn } from '@lib/utils';
+import { RiArrowDownSLine, RiArrowLeftSLine, RiArrowRightSLine, RiArrowUpSLine } from 'react-icons/ri';
+import { localizedPath } from '@/i18n';
+import type { PostRef } from '@/types/blog';
+
+interface SeriesNavigationProps {
+  prevPost?: PostRef | null;
+  nextPost?: PostRef | null;
+  className?: string;
+  locale?: string;
+}
+
+export function SeriesNavigation({ prevPost, nextPost, className, locale }: SeriesNavigationProps) {
+  const isMounted = useIsMounted();
+  const { t } = useTranslation();
+
+  if (!prevPost && !nextPost) {
+    return null;
+  }
+
+  const scrollBehavior: ScrollBehavior = 'smooth';
+
+  return (
+    <div className={cn('mt-4 flex flex-col gap-3 border-border border-t pt-4 md:mt-0 md:pt-2', className)}>
+      {/* 文章导航 */}
+      <div className="flex items-center justify-between gap-2">
+        {/* 上一篇 */}
+        {prevPost ? (
+          isMounted && (
+            <a
+              href={localizedPath(routeBuilder(Routes.Post, prevPost), locale)}
+              className={cn(
+                'group flex items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors',
+                'text-muted-foreground hover:bg-accent hover:text-primary',
+                'min-w-0 max-w-[45%] flex-1',
+              )}
+              title={prevPost.title}
+            >
+              <RiArrowLeftSLine className="h-4 w-4 shrink-0" />
+              <span className="truncate text-xs">{prevPost.title}</span>
+            </a>
+          )
+        ) : (
+          <div className="max-w-[45%] flex-1" />
+        )}
+
+        {/* 下一篇 */}
+        {nextPost ? (
+          isMounted && (
+            <a
+              href={localizedPath(routeBuilder(Routes.Post, nextPost), locale)}
+              className={cn(
+                'group flex items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors',
+                'text-muted-foreground hover:bg-accent hover:text-primary',
+                'min-w-0 max-w-[45%] flex-1 justify-end text-right',
+              )}
+              title={nextPost.title}
+            >
+              <span className="truncate text-xs">{nextPost.title}</span>
+              <RiArrowRightSLine className="h-4 w-4 shrink-0" />
+            </a>
+          )
+        ) : (
+          <div className="max-w-[45%] flex-1" />
+        )}
+      </div>
+
+      {/* 回到顶部和滚到底部 */}
+      {isMounted && (
+        <div className="flex justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior })}
+            className={cn(
+              'flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 transition-colors',
+              'text-muted-foreground text-xs hover:bg-accent hover:text-primary',
+            )}
+            title={t('floating.backToTop')}
+            aria-label={t('floating.backToTop')}
+          >
+            <RiArrowUpSLine className="h-4 w-4" />
+            {t('floating.backToTop')}
+          </button>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: scrollBehavior })}
+            className={cn(
+              'flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 transition-colors',
+              'text-muted-foreground text-xs hover:bg-accent hover:text-primary',
+            )}
+            title={t('floating.scrollToBottom')}
+            aria-label={t('floating.scrollToBottom')}
+          >
+            <RiArrowDownSLine className="h-4 w-4" />
+            {t('floating.scrollToBottom')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

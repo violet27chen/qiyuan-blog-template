@@ -1,0 +1,33 @@
+---
+import CustomContent from '@components/common/CustomContent.astro';
+import HomeSider from '@components/layout/HomeSider.astro';
+import Cover from '@components/ui/cover/Cover.astro';
+import { CONTENT_PADDING } from '@constants/layout';
+import { seoConfig } from '@constants/site-config';
+import Layout from './Layout.astro';
+import TwoColumnLayout from './TwoColumnLayout.astro';
+
+export interface Props {
+  frontmatter: {
+    title: string;
+    description?: string;
+    coverTitle?: string;
+  };
+}
+
+const { frontmatter } = Astro.props;
+---
+
+<Layout title={`${frontmatter.title} | ${seoConfig.title}`}>
+  <TwoColumnLayout>
+    <Cover slot="cover" title={frontmatter.coverTitle ?? frontmatter.title} />
+    <HomeSider slot="sider" />
+    <div class={`shadow-box bg-gradient-start mx-0 flex w-full flex-col gap-8 ${CONTENT_PADDING.standard}`}>
+      <div class="prose md:prose-sm dark:prose-invert" data-pagefind-body>
+        <CustomContent>
+          <slot />
+        </CustomContent>
+      </div>
+    </div>
+  </TwoColumnLayout>
+</Layout>

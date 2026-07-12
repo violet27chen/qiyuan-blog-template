@@ -1,0 +1,15 @@
+{
+  "name": "cloudflare",
+  "version": "1.0.0",
+  "description": "",
+  "main": "temp-mail-worker.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "postal-mime": "^2.7.5"
+  }
+}

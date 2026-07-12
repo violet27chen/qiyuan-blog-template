@@ -1,0 +1,22 @@
+.env
+.env.*
+
+# Debug / temporary
+.dbg/
+debug-*.md
+*.log
+*.tmp
+*.bak
+*.orig
+
+# Dependencies / build
+node_modules/
+dist/
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# agent
+.trae/

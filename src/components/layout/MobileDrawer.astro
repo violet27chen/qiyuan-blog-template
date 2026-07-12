@@ -1,0 +1,262 @@
+---
+import { HomeSiderType } from '@constants/enum';
+import { Icon } from 'astro-icon/components';
+import type { BlogPost } from 'types/blog';
+import { getAlternateUrl, getLocaleFromUrl, getLocaleLabel, localeEntries, t } from '@/i18n';
+import HomeSider from './HomeSider.astro';
+
+interface Props {
+  type?: HomeSiderType;
+  post?: BlogPost;
+}
+
+const { type = HomeSiderType.HOME, post } = Astro.props;
+const locale = getLocaleFromUrl(Astro.url.pathname);
+---
+
+<!-- 遮罩层 -->
+<div id="drawer-overlay" class="fixed inset-0 z-40 hidden bg-black/50" role="presentation" aria-hidden="true"></div>
+
+<!-- 移动端抽屉导航 -->
+<div
+  id="mobile-drawer"
+  class="bg-gradient-start fixed inset-y-0 left-0 z-50 flex hidden h-[100dvh] w-[70vw] min-w-64 max-w-xs -translate-x-full transform flex-col shadow-lg backdrop-blur-sm transition-transform duration-300 md:px-0"
+  role="dialog"
+  aria-label={t(locale, 'drawer.navMenu')}
+  aria-modal="true"
+>
+  <div class="flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pt-3">
+    <div class="flex shrink-0 items-center">
+      <button id="close-drawer" aria-label={t(locale, 'drawer.close')} class="invisible">
+        <Icon name="ri:close-line" class="h-6 w-6" />
+      </button>
+      {localeEntries.length > 1 && (
+        <details class="language-switcher group relative ml-auto mr-4">
+          <summary
+            class="flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-2.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground [&::-webkit-details-marker]:hidden"
+            aria-label={t(locale, 'common.language')}
+          >
+            <Icon name="ri:translate" class="size-4" />
+            <span>{getLocaleLabel(locale)}</span>
+            <Icon name="ri:arrow-down-s-line" class="size-4 transition-transform duration-200 group-open:rotate-180" />
+          </summary>
+          <div class="absolute right-0 top-full z-10 mt-1 flex min-w-28 flex-col overflow-hidden rounded-lg bg-background/80 shadow-lg backdrop-blur-sm dark:bg-black/40">
+            {localeEntries.map((entry) => {
+              const isActive = entry.code === locale;
+              return (
+                <a
+                  href={getAlternateUrl(Astro.url.pathname, entry.code)}
+                  class:list={[
+                    'px-4 py-2 text-sm transition-colors',
+                    isActive
+                      ? 'bg-gradient-shoka-button font-medium text-white'
+                      : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
+                  ]}
+                  aria-current={isActive ? 'true' : undefined}
+                >
+                  {entry.label}
+                </a>
+              );
+            })}
+          </div>
+        </details>
+      )}
+    </div>
+    <HomeSider
+      className="mt-2 flex w-full min-w-full flex-1 min-h-0 overflow-y-auto p-0 pb-8"
+      isDrawer
+      type={type}
+      post={post}
+    />
+  </div>
+</div>
+
+<style is:global>
+  html.drawer-scroll-lock,
+  html.drawer-scroll-lock body {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+
+  html.drawer-scroll-lock body {
+    position: fixed;
+    width: 100%;
+    inset-inline: 0;
+  }
+</style>
+
+<script>
+  import { $isDrawerOpen, closeDrawer } from '@store/modal';
+
+  interface DrawerElements {
+    drawer: HTMLElement | null;
+    closeBtn: HTMLElement | null;
+    overlay: HTMLElement | null;
+  }
+
+  const DRAWER_SELECTORS = {
+    drawer: 'mobile-drawer',
+    closeBtn: 'close-drawer',
+    overlay: 'drawer-overlay',
+  } as const;
+
+  const DRAWER_CLASSES = {
+    hidden: 'hidden',
+    translateX: '-translate-x-full',
+  } as const;
+
+  class DrawerController {
+    private elements: DrawerElements;
+    private unsubscribe: (() => void) | null = null;
+    private scrollY = 0;
+
+    constructor() {
+      this.elements = this.initElements();
+      if (this.validateElements()) {
+        this.bindEvents();
+        this.subscribeToStore();
+      }
+    }
+
+    private initElements(): DrawerElements {
+      return Object.entries(DRAWER_SELECTORS).reduce(
+        (acc, [key, id]) => ({
+          ...acc,
+          [key]: document.getElementById(id),
+        }),
+        {} as DrawerElements,
+      );
+    }
+
+    private validateElements(): boolean {
+      return Object.entries(this.elements).every(([key, element]) => {
+        const exists = !!element;
+        if (!exists) {
+          console.error(`抽屉元素未找到: ${key}`);
+        }
+        return exists;
+      });
+    }
+
+    private bindEvents(): void {
+      document.addEventListener('keydown', this.handleKeyDown);
+      this.elements.closeBtn?.addEventListener('click', this.handleClose);
+      this.elements.overlay?.addEventListener('click', this.handleClose);
+      this.elements.drawer?.addEventListener('click', this.handleDrawerClick);
+    }
+
+    /**
+     * Subscribe to Nanostores $isDrawerOpen state
+     */
+    private subscribeToStore(): void {
+      this.unsubscribe = $isDrawerOpen.subscribe((isOpen) => {
+        if (isOpen) {
+          this.open();
+        } else {
+          this.close();
+        }
+      });
+    }
+
+    private handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape' && $isDrawerOpen.get()) {
+        closeDrawer();
+      }
+    };
+
+    private handleClose = (): void => {
+      closeDrawer();
+    };
+
+    private handleDrawerClick = (e: MouseEvent): void => {
+      const details = this.elements.drawer?.querySelector('details.language-switcher');
+      if (details?.hasAttribute('open') && !details.contains(e.target as Node)) {
+        details.removeAttribute('open');
+      }
+    };
+
+    private preventBackgroundTouchMove = (e: TouchEvent): void => {
+      const drawer = this.elements.drawer;
+      if (!drawer) return;
+      if (!drawer.contains(e.target as Node)) {
+        e.preventDefault();
+      }
+    };
+
+    private lockScroll(): void {
+      this.scrollY = window.scrollY;
+      document.documentElement.classList.add('drawer-scroll-lock');
+      document.body.style.top = `-${this.scrollY}px`;
+      document.addEventListener('touchmove', this.preventBackgroundTouchMove, { passive: false });
+    }
+
+    private unlockScroll(): void {
+      document.documentElement.classList.remove('drawer-scroll-lock');
+      document.body.style.top = '';
+      document.removeEventListener('touchmove', this.preventBackgroundTouchMove);
+      window.scrollTo(0, this.scrollY);
+    }
+
+    private open(): void {
+      const { drawer, overlay, closeBtn } = this.elements;
+      if (!drawer || !overlay) return;
+
+      drawer.classList.remove(DRAWER_CLASSES.hidden);
+      requestAnimationFrame(() => {
+        drawer.classList.remove(DRAWER_CLASSES.translateX);
+      });
+      overlay.classList.remove(DRAWER_CLASSES.hidden);
+      this.lockScroll();
+      closeBtn?.focus();
+    }
+
+    private close(): void {
+      const { drawer, overlay } = this.elements;
+      if (!drawer || !overlay) return;
+
+      drawer.classList.add(DRAWER_CLASSES.translateX);
+      overlay.classList.add(DRAWER_CLASSES.hidden);
+      drawer.querySelector('details.language-switcher')?.removeAttribute('open');
+      this.unlockScroll();
+
+      window.setTimeout(() => {
+        if (!$isDrawerOpen.get()) {
+          drawer.classList.add(DRAWER_CLASSES.hidden);
+        }
+      }, 300);
+    }
+
+    public destroy(): void {
+      document.removeEventListener('keydown', this.handleKeyDown);
+      this.elements.closeBtn?.removeEventListener('click', this.handleClose);
+      this.elements.overlay?.removeEventListener('click', this.handleClose);
+      this.elements.drawer?.removeEventListener('click', this.handleDrawerClick);
+      this.unlockScroll();
+
+      // Unsubscribe from nanostore
+      if (this.unsubscribe) {
+        this.unsubscribe();
+        this.unsubscribe = null;
+      }
+    }
+  }
+
+  let drawerController: DrawerController;
+
+  function init() {
+    drawerController?.destroy();
+    drawerController = new DrawerController();
+  }
+
+  // 首次加载时立即初始化（处理 script 加载晚于 astro:page-load 的情况）
+  if (document.readyState !== 'loading') {
+    init();
+  }
+  // 监听后续页面导航
+  document.addEventListener('astro:page-load', init);
+
+  // Close drawer before page navigation to prevent it from staying open
+  document.addEventListener('astro:before-preparation', () => {
+    closeDrawer();
+  });
+</script>

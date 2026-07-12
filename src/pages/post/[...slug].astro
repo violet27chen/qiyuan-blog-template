@@ -1,0 +1,238 @@
+---
+import CustomContent from '@components/common/CustomContent.astro';
+import HomeSider from '@components/layout/HomeSider.astro';
+import AudioPlayer from '@components/post/AudioPlayer';
+import SummaryPanel, { type SummarySource } from '@components/post/SummaryPanel';
+import audioManifest from '@assets/audio-manifest.json';
+import Cover from '@components/ui/cover/Cover.astro';
+import { defaultContentConfig } from '@constants/content-config';
+import { HomeSiderType } from '@constants/enum';
+import { CONTENT_PADDING } from '@constants/layout';
+import { siteConfig } from '@constants/site-config';
+import Layout from '@layouts/Layout.astro';
+import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
+import {
+  buildCategoryPath,
+  getCategoryArr,
+  getPostById,
+  getPostDescription,
+  getPostLocale,
+  getPostSlug,
+  getPostSummary,
+  getSortedPosts,
+  translateCategoryName,
+} from '@lib/content';
+import { formatForSeo } from '@lib/date';
+import { encodeSlug } from '@lib/route';
+import { getOgImageUrl } from '@lib/seo/og-image';
+import { Icon } from 'astro-icon/components';
+import { Comment } from '@/components/comment';
+import EditButton from '@/components/EditButton';
+import AskArticleButton from '@components/chat/AskArticleButton';
+import { defaultLocale, getLocaleFromUrl, getLocaleLabel, localizedPath, t } from '@/i18n';
+import { extractTextFromMarkdown } from '@/lib/sanitize';
+
+export async function getStaticPaths() {
+  const postCollections = await getSortedPosts(defaultLocale);
+
+  return postCollections.map((post) => ({
+    params: { slug: getPostSlug(post) },
+    props: { postId: post.id },
+  }));
+}
+const { postId } = Astro.props;
+const locale = getLocaleFromUrl(Astro.url.pathname);
+// Look up by locale first (may find a translated version); fall back to defaultLocale
+// which is guaranteed to exist since getStaticPaths enumerates from defaultLocale posts.
+const post =
+  (await getPostById(postId, locale)) ?? (locale !== defaultLocale ? await getPostById(postId, defaultLocale) : undefined);
+if (!post) throw new Error(`Post not found: ${postId}`);
+const isFallback = getPostLocale(post) !== locale;
+// For fallback pages (showing default-locale content under /en/), canonical should point to the original
+const canonicalUrl = isFallback
+  ? new URL(localizedPath(`/post/${encodeSlug(getPostSlug(post))}`, defaultLocale), Astro.site).href
+  : undefined;
+import { render } from 'astro:content';
+const { Content } = await render(post);
+const { title, categories = [], tags = [], date, math: postMath, keywords: postKeywords = [] } = post?.data ?? {};
+// KaTeX CSS: only load when global enableMath is on AND post hasn't opted out.
+// When enableMath is false globally, rehype-katex is not in the pipeline, so no math is rendered.
+const hasMath = defaultContentConfig.enableMath !== false && postMath !== false;
+
+// 使用统一的工具函数获取文章描述（加密文章使用通用描述）
+const finalDescription = getPostDescription(post, locale);
+
+// OGP image for BlogPosting schema (uses same fallback chain as Layout)
+const ogImage = getOgImageUrl(post?.data.cover, Astro.site);
+
+const categoryKeywords = categories?.length ? categories.flat() : [];
+const postKw = postKeywords?.length ? postKeywords : [...tags, ...categoryKeywords];
+const keywords = [...new Set([...postKw, ...(siteConfig.keywords ?? [])])] as string[];
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: title,
+  description: finalDescription,
+  keywords,
+  author: {
+    '@type': 'Person',
+    name: siteConfig.author ?? siteConfig.name,
+    url: Astro.site,
+  },
+  datePublished: formatForSeo(date),
+  ...(post.data.updated && { dateModified: formatForSeo(post.data.updated) }),
+  ...(ogImage && { image: ogImage }),
+  mainEntityOfPage: Astro.url.href,
+};
+
+const categoryArr = getCategoryArr(categories?.[0]);
+const categoryStr = categoryArr?.length ? ` | ${categoryArr.map((c) => translateCategoryName(c, locale)).join(' / ')}` : '';
+
+// Generate breadcrumb data for categories (translated for current locale)
+const breadcrumbCategories = [];
+if (categoryArr?.length) {
+  for (let i = 0; i < categoryArr.length; i++) {
+    const partialCategories = categoryArr.slice(0, i + 1);
+    const link = localizedPath(buildCategoryPath(partialCategories), locale);
+    breadcrumbCategories.push({
+      name: translateCategoryName(categoryArr[i], locale),
+      link: link,
+    });
+  }
+}
+
+// BreadcrumbList structured data for SEO
+const homeName = t(locale, 'breadcrumb.home');
+const breadcrumbListItems = [
+  {
+    '@type': 'ListItem',
+    position: 1,
+    name: homeName,
+    item: new URL(localizedPath('/', locale), Astro.site).href,
+  },
+  ...breadcrumbCategories.map((category, index) => ({
+    '@type': 'ListItem',
+    position: index + 2,
+    name: category.name,
+    item: new URL(category.link, Astro.site).href,
+  })),
+  {
+    '@type': 'ListItem',
+    position: breadcrumbCategories.length + 2,
+    name: title,
+    // 当前页面（最后一项）省略 item，符合 Google 结构化数据最佳实践
+  },
+];
+
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: breadcrumbListItems,
+};
+
+// 确定显示的摘要内容和来源类型
+const postSlug = getPostSlug(post);
+
+// 文章朗读音频（构建时 Edge TTS 预生成，清单来自 src/assets/audio-manifest.json）
+const audioMap = audioManifest as Record<string, { url: string }>;
+const audioUrl =
+  post.data.audio && !post.data.password
+    ? (audioMap[postSlug] ?? audioMap[postSlug.toLowerCase()])?.url
+    : undefined;
+
+let summaryText: string | null = null;
+let summarySource: SummarySource | null = null;
+
+if (post.data.description) {
+  // 优先使用手写描述
+  summaryText = post.data.description;
+  summarySource = 'description';
+} else {
+  // 尝试获取 AI 摘要
+  const aiSummary = getPostSummary(postSlug);
+  if (aiSummary) {
+    summaryText = aiSummary;
+    summarySource = 'ai';
+  } else {
+    // 降级到自动提取
+    summaryText = extractTextFromMarkdown(post.body, 200);
+    summarySource = 'auto';
+  }
+}
+---
+
+<Layout
+  title={`${post.data.title}${categoryStr} | ${siteConfig.title}`}
+  description={finalDescription}
+  siderType={HomeSiderType.POST}
+  post={post}
+  canonical={canonicalUrl}
+  keywords={keywords}
+>
+  <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
+  {hasMath && <link slot="head" rel="stylesheet" href="/katex/katex.min.css" />}
+  <TwoColumnLayout post={post}>
+    <Cover slot="cover" data={post} />
+    <HomeSider slot="sider" type={HomeSiderType.POST} post={post} />
+    <div class={`shadow-box bg-gradient-start flex flex-col gap-2 ${CONTENT_PADDING.standard}`}>
+      <!-- Breadcrumb Navigation -->
+      <nav class="text-muted-foreground flex items-center justify-between gap-2 text-sm">
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1">
+            <!-- Home Icon and Link -->
+            <Icon name="fa6-solid:house-chimney" class="h-4 w-4" />
+            <a href={localizedPath('/', locale)} aria-label={homeName}>
+              <span class="hover:text-blue transition-colors duration-300">{homeName}</span>
+            </a>
+          </div>
+          <!-- Category Breadcrumbs -->
+          {
+            breadcrumbCategories.map((category, index) => (
+              <>
+                <Icon name="ri:arrow-right-s-line" class="text-muted-foreground/60 h-4 w-4" />
+                <a
+                  href={category.link}
+                  class={`hover:text-blue transition-colors duration-300 ${index === breadcrumbCategories.length - 1 ? 'text-primary bg-primary/10 hover:text-primary hover:bg-primary/20 rounded-full px-2.5 py-1' : ''}`}
+                  aria-label={t(locale, 'breadcrumb.goToCategory', { name: category.name })}
+                >
+                  {category.name}
+                </a>
+              </>
+            ))
+          }
+        </div>
+        {import.meta.env.DEV && <EditButton client:only="react" postId={postId} />}
+      </nav>
+      {isFallback && (
+        <div class="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+          <Icon name="ri:translate-2" class="h-4 w-4 shrink-0" />
+          <span>{t(locale, 'post.fallbackNotice', { lang: getLocaleLabel(locale) })}</span>
+        </div>
+      )}
+      {
+        !post.data.password && summaryText && summarySource && (
+          <SummaryPanel client:visible summary={summaryText} source={summarySource} className="mt-2" />
+        )
+      }
+      {audioUrl && <AudioPlayer client:load src={audioUrl} className="mt-2" />}
+      {
+        !post.data.password && (
+          <div class="mb-4">
+            <AskArticleButton
+              client:load
+              id={postId}
+              slug={postSlug}
+              title={title}
+              label={t(locale, 'chat.askArticle')}
+            />
+          </div>
+        )
+      }
+      <Comment slug={postSlug} />
+      <article class="prose md:prose-sm dark:prose-invert" data-pagefind-body>
+        <CustomContent Content={Content} />
+      </article>
+    </div>
+  </TwoColumnLayout>
+</Layout>

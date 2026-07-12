@@ -1,0 +1,19 @@
+{
+  "redirects": [
+    {
+      "source": "$host",
+      "destination": "$wwwhost",
+      "statusCode": 301
+    }
+  ],
+  "cloudFunctions": {
+    "nodejs": {
+      "externalNodeModules": [
+        "@edgeone/pages-blob"
+      ],
+      "includeFiles": [
+        "cloud-functions/_lib/**"
+      ]
+    }
+  }
+}

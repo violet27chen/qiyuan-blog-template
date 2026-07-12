@@ -1,0 +1,31 @@
+/* Waline comment system theme - matching blog primary color
+ * override global styles
+ * Waline 评论系统主题样式
+ * 自定义指南: https://waline.js.org/guide/features/style.html
+ * CSS 变量参考: https://waline.js.org/reference/client/style.html
+ */
+:root body {
+  /* === 主题色 (Theme Colors) === */
+  /* 主要主题色，用于按钮、链接等交互元素 */
+  --waline-theme-color: #e9546b;
+  /* 激活状态颜色，用于悬停、焦点状态 */
+  --waline-active-color: #ed788c;
+}
+
+/* === 暗色模式 (Dark Mode) === */
+html.dark body {
+  /* 主题色 - 暗色模式下使用更亮的颜色以保持对比度 */
+  --waline-theme-color: #ed788c;
+  --waline-active-color: #f09aab;
+
+  --waline-color: #8e8e8e;
+  --waline-disable-bg-color: hsl(0, 0%, 70%);
+  --waline-info-bg-color: #8e8e8e;
+  --waline-info-color: #fff;
+}
+
+/* === 额外的样式优化 (Additional Styles) === */
+.wl-comment {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}

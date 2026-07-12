@@ -1,0 +1,279 @@
+---
+import { SeriesNavigation } from '@components/post/SeriesNavigation';
+import { SeriesPostList } from '@components/post/SeriesPostList';
+import HomeSiderSegmented from '@components/ui/segmented/HomeSiderSegmented';
+import { HomeSiderSegmentType, HomeSiderType } from '@constants/enum';
+import { getPostSlug } from '@lib/content/locale';
+import { getAdjacentSeriesPosts, getSeriesPosts } from '@lib/content/posts';
+import { toPostRef, toPostRefs } from '@lib/content/transforms';
+import { cn } from '@lib/utils';
+import type { BlogPost } from 'types/blog';
+import { getLocaleFromUrl } from '@/i18n';
+import HomeInfo from './HomeInfo.astro';
+import { ScrollProgress } from './ScrollProgress';
+import { TableOfContents } from './TableOfContents/index';
+
+interface Props {
+  type?: HomeSiderType;
+  className?: string;
+  isDrawer?: boolean;
+  post?: BlogPost;
+}
+
+const { type = HomeSiderType.HOME, className, isDrawer = false, post } = Astro.props;
+const locale = getLocaleFromUrl(Astro.url.pathname);
+const defaultSegmentType = type === HomeSiderType.POST ? HomeSiderSegmentType.DIRECTORY : HomeSiderSegmentType.INFO;
+
+// 获取系列文章（转换为轻量级引用）
+const seriesPosts = post && type === HomeSiderType.POST ? toPostRefs(await getSeriesPosts(post, locale)) : [];
+
+// 获取上一篇和下一篇（转换为轻量级引用）
+const adjacentPosts =
+  post && type === HomeSiderType.POST ? await getAdjacentSeriesPosts(post, locale) : { prevPost: null, nextPost: null };
+const prevPost = adjacentPosts.prevPost ? toPostRef(adjacentPosts.prevPost) : null;
+const nextPost = adjacentPosts.nextPost ? toPostRef(adjacentPosts.nextPost) : null;
+---
+
+<div
+  class={cn(
+    'page-home-sider shadow-home-sider self-start flex flex-col items-stretch',
+    isDrawer
+      ? 'static h-auto min-h-0 w-full min-w-full max-w-none overflow-visible shadow-none'
+      : 'sticky top-0 tablet:overscroll-none min-w-64 max-w-64 tablet:hidden h-screen overflow-auto scrollbar-hidden px-2',
+    className,
+  )}
+  transition:name={isDrawer ? 'page-home-sider-drawer' : 'page-home-sider'}
+>
+  {
+    type === HomeSiderType.POST && (
+      <HomeSiderSegmented
+        client:only="react"
+        className="my-4 tablet:mb-0 flex justify-between text-sm/6 w-auto"
+        itemClass="grow"
+        defaultValue={defaultSegmentType}
+        id="inner-home-sider"
+      />
+    )
+  }
+
+  <sider-content
+    class={cn('scrollbar-hidden', isDrawer ? 'overflow-visible' : 'flex-1 overflow-x-hidden overflow-y-auto')}
+    data-type={type}
+    data-default-type={defaultSegmentType}
+  >
+    <div slot="info" class="sider-slot" data-slot-type="info">
+      <HomeInfo className={type === HomeSiderType.HOME ? (isDrawer ? 'pt-2' : 'pt-18 md:pt-0') : ''} />
+    </div>
+    <div slot="directory" class="sider-slot overflow-hidden h-full" data-slot-type="directory">
+      {type === HomeSiderType.POST && <TableOfContents client:only="react" enableNumbering={post?.data.tocNumbering ?? true} />}
+    </div>
+    <div slot="series" class="sider-slot" data-slot-type="series">
+      {type === HomeSiderType.POST && <SeriesPostList client:idle posts={seriesPosts} currentPostSlug={post ? getPostSlug(post) : undefined} locale={locale} />}
+    </div>
+  </sider-content>
+
+  <!-- 内联脚本：在 DOM 解析后立即隐藏不需要的内容，避免闪烁 -->
+  <script is:inline data-astro-rerun>
+    (function () {
+      const container = document.querySelector('sider-content');
+      if (!container) return;
+
+      const defaultType = container.getAttribute('data-default-type') || 'info';
+      const slots = container.querySelectorAll('.sider-slot');
+
+      slots.forEach((slot) => {
+        const slotType = slot.getAttribute('data-slot-type');
+        if (slotType !== defaultType) {
+          slot.classList.add('hidden');
+        }
+      });
+    })();
+  </script>
+
+  {
+    type === HomeSiderType.POST && (
+      <SeriesNavigation client:load prevPost={prevPost} nextPost={nextPost} className="w-full px-2" locale={locale} />
+    )
+  }
+
+  {!isDrawer && (
+    <ScrollProgress client:only="react" className="mt-auto w-full rounded-full pt-4" />
+  )}
+</div>
+
+<script>
+  import { HomeSiderType, HomeSiderSegmentType } from '@constants/enum';
+  import { homeSiderSegmentType } from '@store/app';
+
+  // 定义SiderContent自定义元素
+  class SiderContent extends HTMLElement {
+    // 私有属性定义
+    private infoContent: HTMLElement | null = null;
+    private directoryContent: HTMLElement | null = null;
+    private seriesContent: HTMLElement | null = null;
+    private pageType: string | null = null;
+    private defaultType: string | null = null;
+
+    constructor() {
+      super();
+
+      // 保存最初的内容片段
+      this.infoContent = this.querySelector('[slot="info"]');
+      this.directoryContent = this.querySelector('[slot="directory"]');
+      this.seriesContent = this.querySelector('[slot="series"]');
+
+      // 从HTML属性中获取当前页面类型和默认分段类型
+      this.pageType = this.getAttribute('data-type');
+      this.defaultType = this.getAttribute('data-default-type');
+
+      // 初始化
+      this.init();
+    }
+
+    init() {
+      // 确保DOM已准备好
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => this.initContent());
+      } else {
+        this.initContent();
+      }
+    }
+
+    initContent() {
+      // 首页直接显示HomeInfo（无动画）
+      if (this.pageType === HomeSiderType.HOME) {
+        this.showContent(HomeSiderSegmentType.INFO, true);
+      } else {
+        // 设置初始值（无动画）
+        const initialType = (this.defaultType as HomeSiderSegmentType) || HomeSiderSegmentType.INFO;
+        homeSiderSegmentType.set(initialType);
+        this.showContent(initialType, true);
+
+        // 监听状态变化（有动画）
+        homeSiderSegmentType.listen((value) => {
+          this.showContent(value, false);
+        });
+      }
+    }
+
+    showContent(type: HomeSiderSegmentType, skipAnimation = false) {
+      // 确定目标内容
+      let targetContent: HTMLElement | null = null;
+      if (type === HomeSiderSegmentType.DIRECTORY) {
+        targetContent = this.directoryContent;
+      } else if (type === HomeSiderSegmentType.SERIES) {
+        targetContent = this.seriesContent;
+      } else {
+        targetContent = this.infoContent;
+      }
+
+      // 如果是初始化或者跳过动画，直接切换
+      if (skipAnimation) {
+        // 先隐藏所有
+        [this.infoContent, this.directoryContent, this.seriesContent].forEach((content) => {
+          content?.classList.add('hidden');
+        });
+        // 再显示目标
+        targetContent?.classList.remove('hidden');
+        return;
+      }
+
+      // 如果已经在显示目标内容，直接返回
+      if (targetContent && !targetContent.classList.contains('hidden')) {
+        return;
+      }
+
+      // 隐藏其他内容（添加退出动画）
+      [this.infoContent, this.directoryContent, this.seriesContent].forEach((content) => {
+        if (content && content !== targetContent && !content.classList.contains('hidden')) {
+          content.classList.add('exiting');
+          setTimeout(() => {
+            content.classList.add('hidden');
+            content.classList.remove('exiting');
+          }, 200);
+        }
+      });
+
+      // 显示目标内容（添加进入动画）
+      if (targetContent) {
+        targetContent.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          targetContent?.classList.add('entering');
+          setTimeout(() => {
+            targetContent?.classList.remove('entering');
+          }, 200);
+        });
+      }
+    }
+  }
+
+  // 注册自定义元素
+  customElements.define('sider-content', SiderContent);
+</script>
+
+<style>
+  /* 圣诞模式下调整 z-index，让装饰效果正确显示 */
+  :global(html.christmas) .page-home-sider {
+    z-index: 5;
+  }
+
+  sider-content {
+    position: relative;
+  }
+
+  .sider-slot {
+    position: absolute;
+    top: auto;
+    left: 0;
+    right: 0;
+  }
+
+  @media (768px >= width) {
+    .sider-slot {
+      position: relative;
+    }
+  }
+
+  .sider-slot.hidden {
+    display: none;
+  }
+
+  /* 默认无动画，适用于 prefers-reduced-motion: reduce */
+  .sider-slot.entering,
+  .sider-slot.exiting {
+    animation: none;
+  }
+
+  /* 只在用户未设置 reduce-motion 时应用动画 */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes slide-in-from-right {
+      from {
+        opacity: 0;
+        transform: translateX(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slide-out-to-left {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(-12px);
+      }
+    }
+
+    .sider-slot.entering {
+      animation: slide-in-from-right 0.2s ease-in-out;
+    }
+
+    .sider-slot.exiting {
+      animation: slide-out-to-left 0.2s ease-in-out;
+    }
+  }
+</style>

@@ -1,0 +1,21 @@
+name = "temp-mail-worker"
+main = "temp-mail-worker.js"
+compatibility_date = "2024-09-23"
+
+# Cloudflare 账户 ID（与 r2.qiyuan.icu / s3.qiyuan.icu 同账户）
+account_id = "fd8407455495209c315b0086c9ec1877"
+
+# D1 数据库绑定：先 `wrangler d1 create temp_mail` 得到 database_id 填到下面
+[[d1_databases]]
+binding = "DB"
+database_name = "temp_mail"
+database_id = "10fb385a-9bb8-477d-b79b-dc48e74397f8"
+
+# 部署步骤：
+#   1) cd cloudflare
+#   2) npm init -y && npm i postal-mime
+#   3) wrangler d1 create temp_mail
+#   4) wrangler d1 execute temp_mail --file=temp-mail-schema.sql
+#   5) database_id 已填好（TEMP_MAIL_DOMAIN 本 Worker 不读，已移除）
+#   6) wrangler deploy
+#   7) Cloudflare 控制台 → Email Routing → Routes → 设 catch-all * → 路由到本 Worker

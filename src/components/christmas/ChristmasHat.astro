@@ -1,0 +1,120 @@
+---
+interface Props {
+  className?: string;
+  /** Width/Height of the hat relative to container. Default: '100%' */
+  size?: number | string;
+  /** Position offset %. Default: { x: -15, y: -55 } */
+  offset?: { x?: number; y?: number };
+  /** Rotation in degrees. Default: -10 */
+  rotate?: number;
+  /** Custom colors objects */
+  colors?: {
+    primary?: string; // Main red
+    secondary?: string; // Darker red/gradient
+    white?: string; // Brim/Pompom
+  };
+}
+
+const {
+  className,
+  size = '100%',
+  offset = { x: -28, y: -50 },
+  rotate = 10,
+  colors = {
+    primary: '#FF4E50',
+    secondary: '#C00000',
+    white: '#FFFFFF',
+  },
+} = Astro.props;
+
+// Generate unique IDs for gradients to avoid conflicts
+const uniqueId = Math.random().toString(36).substring(2, 9);
+const gradientId0 = `hatGradient0_${uniqueId}`;
+const gradientId1 = `hatGradient1_${uniqueId}`;
+const gradientId2 = `hatGradient2_${uniqueId}`;
+
+const cssVars = {
+  '--hat-primary': colors.primary,
+  '--hat-secondary': colors.secondary,
+  '--hat-white': colors.white,
+  '--hat-white-light': '#E6E6E6',
+  '--hat-rotate': `${rotate}deg`,
+};
+---
+
+<div
+  class:list={['christmas-hat-wrapper', className]}
+  style={{
+    ...cssVars,
+    width: typeof size === 'number' ? `${size}px` : size,
+    height: typeof size === 'number' ? `${size}px` : size,
+    top: `${offset.y}%`,
+    left: `${offset.x}%`,
+    filter: 'drop-shadow(0px 10px 15px rgba(0, 0, 0, 0.1))',
+  }}
+>
+  <svg viewBox="0 0 200 200" class="christmas-hat-svg" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id={gradientId0} x1="14034" y1="-0.170427" x2="-473.352" y2="13990.6" gradientUnits="userSpaceOnUse">
+        <stop stop-color={colors.primary}></stop>
+        <stop offset="1" stop-color={colors.secondary}></stop>
+      </linearGradient>
+      <linearGradient id={gradientId1} x1="-4576.49" y1="2333.31" x2="-5172.15" y2="1067.09" gradientUnits="userSpaceOnUse">
+        <stop stop-color={colors.white}></stop>
+        <stop offset="1" stop-color="#E6E6E6"></stop>
+      </linearGradient>
+      <linearGradient id={gradientId2} x1="1969" y1="125" x2="1969" y2="4025" gradientUnits="userSpaceOnUse">
+        <stop stop-color={colors.white}></stop>
+        <stop offset="1" stop-color="#E6E6E6"></stop>
+      </linearGradient>
+    </defs>
+
+    <!-- Hat Body -->
+    <path
+      d="M179.712 87.522C179.712 87.522 178.612 41.8252 134.62 31.1981C90.6286 20.571 64.2335 66.2678 42.2376 119.403C31.2397 145.971 54.2151 152.905 70.7121 131.65C104.712 103.65 92.212 127.65 179.712 87.522Z"
+      fill={`url(#${gradientId0})`}></path>
+
+    <!-- Brim -->
+    <path
+      d="M181.512 88.5738C150.088 90.4364 107.773 110.343 88.7902 138.652"
+      stroke={`url(#${gradientId1})`}
+      stroke-width="28"
+      stroke-linecap="round"></path>
+
+    <!-- Pompom -->
+    <path
+      d="M38.5 164C49.2696 164 58 155.27 58 144.5C58 133.73 49.2696 125 38.5 125C27.7304 125 19 133.73 19 144.5C19 155.27 27.7304 164 38.5 164Z"
+      fill={`url(#${gradientId2})`}></path>
+  </svg>
+</div>
+
+<style>
+  .christmas-hat-wrapper {
+    position: absolute;
+    pointer-events: none;
+    z-index: 20;
+    transform: rotate(var(--hat-rotate));
+    transition:
+      transform 0.3s ease,
+      opacity 0.3s ease-out;
+  }
+
+  /* 圣诞特效关闭时隐藏圣诞帽 */
+  :global(html:not(.christmas)) .christmas-hat-wrapper {
+    opacity: 0;
+    transform: rotate(var(--hat-rotate)) scale(0.8);
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .christmas-hat-wrapper {
+      transition: none;
+    }
+  }
+
+  .christmas-hat-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+</style>

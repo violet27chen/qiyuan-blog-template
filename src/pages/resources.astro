@@ -1,0 +1,29 @@
+---
+import { ResourcesCollection } from '@components/resources';
+import HomeSider from '@components/layout/HomeSider.astro';
+import Cover from '@components/ui/cover/Cover.astro';
+import { CONTENT_PADDING } from '@constants/layout';
+import { resourcesPageConfig, siteConfig } from '@constants/site-config';
+import Layout from '@layouts/Layout.astro';
+import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
+import { getLocaleFromUrl, t } from '@/i18n';
+
+if (!resourcesPageConfig?.enabled) return Astro.redirect('/404');
+
+const locale = getLocaleFromUrl(Astro.url.pathname);
+const title = `${t(locale, 'resources.title')} | ${siteConfig.title}`;
+const description = t(locale, 'resources.description');
+const ownerUserId = resourcesPageConfig?.ownerUserId ? String(resourcesPageConfig.ownerUserId) : undefined;
+---
+
+<Layout title={title} description={description}>
+  <TwoColumnLayout>
+    <Cover slot="cover" title={t(locale, 'resources.title')} />
+    <HomeSider slot="sider" />
+    <div
+      class={`bg-gradient-start shadow-box tablet:shadow-none flex flex-col overflow-hidden ${CONTENT_PADDING.standard}`}
+    >
+      <ResourcesCollection ownerUserId={ownerUserId} client:load />
+    </div>
+  </TwoColumnLayout>
+</Layout>

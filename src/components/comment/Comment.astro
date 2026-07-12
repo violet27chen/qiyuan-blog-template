@@ -1,0 +1,41 @@
+---
+/**
+ * Comment Router Component
+ *
+ * Selects the appropriate comment provider based on site configuration.
+ * Supports: remark42, giscus, waline, twikoo, none
+ */
+import { commentConfig } from '@/constants/site-config';
+import { getLocaleFromUrl, t } from '@/i18n';
+import { cn } from '@/lib/utils';
+import { christmasEnabled } from '@/store/christmas';
+import Remark42 from './providers/Remark42.astro';
+import GiscusClient from './providers/GiscusClient.astro';
+import WalineClient from './providers/WalineClient.astro';
+import TwikooClient from './providers/TwikooClient.astro';
+import CustomComments from './providers/CustomComments.tsx';
+import CustomCommentsFab from './providers/CustomCommentsFab.tsx';
+
+interface Props {
+  slug?: string;
+}
+const { slug = '' } = Astro.props;
+
+const provider = commentConfig.provider ?? 'none';
+const locale = getLocaleFromUrl(Astro.url.pathname);
+---
+
+{
+  provider === 'custom' ? (
+    // 自建评论：悬浮按钮 + 模态框（点击文章页右下角按钮打开，不内嵌在文章流中）
+    <CustomCommentsFab slug={slug} client:load />
+  ) : provider !== 'none' ? (
+    <div class={cn('comments w-full', { 'z-5': christmasEnabled.get() })}>
+      <p class="text-muted-foreground mb-4 text-center text-sm">{t(locale, 'comment.prompt')}</p>
+      {provider === 'remark42' && <Remark42 client:load />}
+      {provider === 'giscus' && <GiscusClient client:load />}
+      {provider === 'waline' && <WalineClient client:load />}
+      {provider === 'twikoo' && <TwikooClient client:load />}
+    </div>
+  ) : null
+}

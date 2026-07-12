@@ -1,0 +1,709 @@
+# yaml-language-server: $schema=https://json-schema.org/draft-07/schema
+# =============================================================================
+# Site Configuration
+# =============================================================================
+# This file contains all site-specific configurations.
+# Modify this file to customize your blog.
+# After changes, rebuild the site: docker compose up -d --build
+# =============================================================================
+
+# =============================================================================
+# Site Basic Information
+# =============================================================================
+site:
+  title: 祈愿博客 # 网站名称
+  alternate: qiyuan # 网站英文名称 用于页脚、Logo、@ handle 等
+  subtitle: 记录技术、写作与日常灵感。 # 网站副标题
+  name: 你的名字 # 作者名称 - 请修改为你的名字
+  description: 祈愿博客，记录技术、写作与日常灵感。 # 网站描述
+  avatar: /img/avatar.svg # 网站头像
+  showLogo: true # 是否显示 Logo
+  author: 你的名字 # 作者名称 - 请修改为你的名字
+  url: https://qiyuan.icu # 站点 URL 用于 RSS 和 SEO
+  defaultOgImage: /img/avatar.svg # 默认 Open Graph 图片
+  startYear: 2026 # 建站年份
+  timezone: Asia/Shanghai # 时区配置 (IANA 格式)，用于日期显示和处理
+  keywords: # SEO 关键词 (全局)
+    - 博客
+    - Astro
+    - 技术
+    - 前端
+    # 请根据你的网站内容添加关键词
+  # breadcrumbHome: 首页  # 面包屑导航中首页的显示名称（默认: '首页'）
+  # icp:                         # ICP 备案号（可自定义链接）
+  #   text: "粤ICP备xxxxxxxxxx号"
+  #   link: "https://beian.miit.gov.cn/"
+  # Enable slug transliteration (converts CJK characters to pinyin/romaji)
+  # Note: enabling this will break existing CJK URLs. Run `pnpm save-slugs` first to save old slugs into frontmatter.link
+  # enableSlugTransliteration: true
+
+# =============================================================================
+# Internationalization (i18n)
+# 国际化配置 - 控制多语言支持
+# =============================================================================
+# defaultLocale: 默认语言代码（URL 不带前缀）
+# locales: 支持的语言列表
+#   - code: 语言代码（BCP 47 短格式，如 'zh', 'en', 'ja'）
+#   - label: 语言显示名称（如 '中文', 'English'）
+# -----------------------------------------------------------------------------
+i18n:
+  defaultLocale: zh
+  locales:
+    - code: zh
+      label: 中文
+    - code: en
+      label: English
+      enabled: true
+    - code: ja
+      label: 日本語
+      enabled: true
+
+# =============================================================================
+# RAG / AI 站内助手
+# 技术栈：硅基流动 BAAI/bge-m3 向量模型 + Neon(pgvector) 向量库 + Moonshot 生成
+# 凭证由 EdgeOne 环境变量注入（见 edge-functions/api/[[default]].js）：
+#   SILICONFLOW_API_KEY / NEON_SERVERLESS_URL / MOONSHOT_API_KEY
+# 索引脚本：npm run index:neon（读构建产物 JSON，调硅基流动生成向量写入 Neon）
+# 建表：database/rag_posts.sql（在 Neon 控制台 SQL 编辑器运行一次）
+# =============================================================================
+rag:
+  enabled: false
+  embedding:
+    provider: siliconflow
+    model: BAAI/bge-m3
+    dims: 1024
+  vectorDb:
+    provider: neon
+    table: rag_posts
+  generation:
+    provider: moonshot
+    model: moonshot-v1-128k
+  topK: 5
+
+# =============================================================================
+# Category Map
+# Maps Chinese category names to URL-friendly English slugs
+# Example: '随笔' category URL becomes /categories/life
+# =============================================================================
+categoryMap:
+  # Primary categories
+  随笔: life
+  笔记: note
+  工具: tools
+  周刊: weekly
+  # Secondary categories (for nested paths)
+  资源: resources
+  # Add more as needed:
+  # 书摘: reading
+  # 后端: back-end
+  # 算法: algorithm
+  # 项目: project
+
+# =============================================================================
+# Featured Categories (Homepage)
+# 首页精选分类 - 在首页以卡片形式展示的分类入口
+# =============================================================================
+# 字段说明：
+#   link: 分类链接路径，对应 categoryMap 中的英文 slug
+#   label: 卡片上显示的分类名称
+#   image: 封面图片路径（相对于 public 目录）
+#   description: 分类描述文字，显示在卡片上
+# -----------------------------------------------------------------------------
+featuredCategories:
+  - link: life # 对应 categoryMap 中 随笔: life
+    label: 随笔
+    image: /img/cover/life.webp
+    description: 生活记录、随想随笔
+  - link: note # 对应 categoryMap 中 笔记: note
+    label: 笔记
+    image: /img/cover/note.webp
+    description: 技术笔记、学习笔记
+  - link: note/resources # 嵌套分类：笔记/资源
+    label: 资源
+    image: /img/cover/resources.webp
+    description: 网盘资源分享站，导航「资源站」可浏览全部
+  - link: tools # 对应 categoryMap 中 工具: tools
+    label: 工具
+    image: /img/cover/tools.webp
+    description: 工具使用、效率提升
+
+# =============================================================================
+# Featured Series
+# 精选系列功能 - 用于展示定期更新的系列内容（支持多个系列）
+# =============================================================================
+# 字段说明：
+#   slug: URL 路径（必填），如 'weekly' 对应 /weekly 路径
+#         注意：不能与保留路由冲突，包括：about, categories, tags, friends, posts, archives, api, _astro, rss.xml, sitemap.xml, robots.txt, favicon.ico 等
+#   categoryName: 对应的分类名称（必填，需在 categoryMap 中存在）
+#   label: 侧边栏/导航中显示的简短名称（可选）
+#   fullName: 系列页面标题显示的完整名称（可选）
+#   description: 系列介绍文字，支持多行 Markdown（可选）
+#   cover: 系列页面头图路径，相对于 public 目录（可选）
+#   enabled: 是否启用此系列，设为 false 可关闭（可选，默认 true）
+#   icon: 导航图标，Iconify 格式如 'ri:newspaper-line'（可选）
+#   highlightOnHome: 是否在首页高亮显示最新文章（可选，默认 true，显式设为 false 可禁用）
+#   links: 相关链接配置（可选）
+# -----------------------------------------------------------------------------
+featuredSeries:
+  - slug: weekly # URL 路径: /weekly
+    categoryName: 周刊 # 必须与 categoryMap 中的分类名匹配
+    label: 我的周刊 # 简短名称
+    fullName: 我的技术周刊 # 完整名称
+    description: | # 支持多行 Markdown
+      这是周刊/系列文章功能的示例配置。
+      你可以用它来发布定期更新的系列内容，如技术周刊、读书笔记系列等。
+      设置 enabled: false 可以关闭此功能。
+    cover: /img/weekly_header.webp # 系列页面头图
+    enabled: false # 启用此系列
+    icon: ri:newspaper-line # 导航图标
+    links: # 相关链接（可选）
+      github: https://github.com/your-username # (可选) GitHub 仓库
+      rss: /rss.xml # (可选) RSS 订阅链接
+      # chrome: https://chromewebstore.google.com/detail/your-extension-id # (可选) 浏览器插件
+      # docs: https://your-docs-url # (可选) 文档链接
+  # 示例：添加第二个系列（取消注释启用）
+  # - slug: reading # URL 路径: /reading
+  #   categoryName: 书摘
+  #   label: 读书笔记
+  #   fullName: 我的读书笔记
+  #   description: 阅读记录与读后感
+  #   cover: /img/weekly_header.webp # 记得添加，我这里就是个示例
+  #   enabled: true
+  #   icon: ri:book-read-line
+
+# =============================================================================
+# Social Links
+# 社交链接 - 显示在页脚和个人信息区域
+# =============================================================================
+# 字段说明：
+#   url: 链接地址（邮箱需加 mailto: 前缀）
+#   icon: Iconify 图标标识，格式为 "集合:图标名"
+#         图标查询：https://icon-sets.iconify.design/ri/
+#   color: (可选) 图标颜色，十六进制格式如 '#191717'
+# -----------------------------------------------------------------------------
+# 添加新平台：复制现有配置块，修改键名和各字段值即可
+# -----------------------------------------------------------------------------
+social:
+  github:
+    url: https://github.com/your-username
+    icon: ri:github-fill
+    color: '#191717'
+  email:
+    url: mailto:your-email@example.com
+    icon: ri:mail-line
+    color: '#55acd5'
+  rss:
+    url: /rss.xml
+    icon: ri:rss-line
+    color: '#ff6600'
+  telegram:
+    url: https://t.me/your-handle
+    icon: ri:telegram-fill
+    color: '#229ED9'
+  twitter:
+    url: https://x.com/your-handle
+    icon: ri:twitter-fill
+    color: '#4b9ae4'
+  # -------------------------------------------------------------------------
+  # 以下是更多可选的社交平台配置示例，取消注释并修改即可启用：
+  # -------------------------------------------------------------------------
+  # twitter:
+  #   url: https://x.com/your-handle
+  #   icon: ri:twitter-fill
+  #   color: '#4b9ae4'
+  # bilibili:
+  #   url: https://space.bilibili.com/your-id
+  #   icon: ri:bilibili-fill
+  #   color: '#da708a'
+  # zhihu:
+  #   url: https://www.zhihu.com/people/your-id
+  #   icon: ri:zhihu-fill
+  #   color: '#1e88e5'
+  # music:
+  #   url: https://music.163.com/#/user/home?id=your-id
+  #   icon: ri:netease-cloud-music-line
+  #   color: '#e60026'
+
+
+
+# =============================================================================
+# Announcements
+# 公告系统 - 在页面顶部显示重要通知
+# =============================================================================
+# 字段说明：
+#   id: 唯一标识符，用于记录用户已读状态（localStorage）
+#   title: 公告标题
+#   content: 公告内容文字
+#   type: 类型，影响样式颜色 (info/success/warning/error)
+#   priority: 优先级数字，数值越大排序越靠前
+#   color: (可选) 自定义颜色，覆盖 type 默认色
+#   publishDate: 发布日期，格式 'YYYY-MM-DD'
+#   startDate: (可选) 开始显示时间，ISO 8601 格式
+#   endDate: (可选) 结束显示时间，过期后自动隐藏
+#   link: (可选) 相关链接
+#     url: 链接地址
+#     text: 链接文字
+#     external: 是否在新窗口打开 (true/false)
+# -----------------------------------------------------------------------------
+# 取消下方注释即可启用公告示例：
+# -----------------------------------------------------------------------------
+# announcements:   # 取消注释启用公告（默认不显示）
+#   - id: welcome
+#     title:
+#       zh: 欢迎
+#       en: Welcome
+#     content:
+#       zh: "这是一条示例公告。"
+#       en: "This is a sample announcement."
+#     type: info
+#     priority: 10
+#     publishDate: '2026-07-12'
+
+
+# =============================================================================
+# Default Cover List
+# 默认封面列表 - 文章没有指定封面时将随机从列表中选择一张作为封面
+# 不设置则使用内置的 21 张默认封面 (/img/cover/1~21.webp)
+# =============================================================================
+# defaultCoverList:
+#   - /img/cover/1.webp
+#   - https://example.com/custom-cover.webp
+
+
+# =============================================================================
+# Content Processing Options
+# 内容处理选项 - 控制文章渲染和交互行为
+# =============================================================================
+# 字段说明：
+#   addBlankTarget: 外部链接在新窗口打开
+#   smoothScroll: 启用平滑滚动动画
+#   addHeadingLevel: 自动为标题添加层级锚点
+#   enhanceCodeBlock: 增强代码块样式（行号、语言标签等）
+#   enableCodeCopy: 显示代码块复制按钮
+#   enableCodeFullscreen: 显示代码块全屏按钮
+#   enableLinkEmbed: 启用链接卡片预览（解析 OG 信息）
+#   enableTweetEmbed: 启用推文嵌入展示
+#   enableOGPreview: 启用 Open Graph 预览卡片
+#   previewCacheTime: 预览信息缓存时间（天）
+#   lazyLoadEmbeds: 延迟加载嵌入内容（提升性能）
+#   postCardImagePosition: 文章卡片封面图位置 (alternating/left/right)
+# -----------------------------------------------------------------------------
+content:
+  addBlankTarget: true # 外部链接新窗口打开
+  smoothScroll: true # 平滑滚动
+  addHeadingLevel: true # 标题锚点
+  enhanceCodeBlock: true # 增强代码块
+  enableCodeCopy: true # 代码复制按钮
+  enableCodeFullscreen: true # 代码全屏按钮
+  enableLinkEmbed: true # 链接卡片预览
+  enableCodePenEmbed: true # CodePen 嵌入
+  enableTweetEmbed: true # 推文嵌入
+  enableOGPreview: true # OG 预览卡片
+  previewCacheTime: 30 # 预览缓存时间(天)
+  lazyLoadEmbeds: true # 延迟加载嵌入
+  postCardImagePosition: alternating # 文章卡片封面图位置在首页的显示控制 alternating 默认交替显示 left 封面图始终在左侧 right 封面图始终在右侧
+  # Shoka 兼容功能（默认全部启用，设为 false 可关闭）
+  enableShokaContainers: true   # :::提醒块 ;;;标签卡 +++折叠块
+  enableShokaAttrs: true        # [text]{.class} 属性语法
+  enableShokaEffects: true      # ++下划线++ ==高亮== ~下标~ ^上标^
+  enableShokaSpoiler: true      # !!隐藏文字!!
+  enableShokaRuby: true         # {文字^注音} 注音标注
+  enableShokaHexoTags: true     # {% links %} {% media %} Hexo标签
+  enableMath: true              # $数学公式$ KaTeX渲染
+  enableCodeMeta: true          # 代码块增强 (title, mark, command)
+  enableQuiz: true              # 练习题交互功能
+  enableEncryptedBlock: true    # :::encrypted{password="..."} 加密内容块
+
+# =============================================================================
+# Navigation Routes
+# 导航菜单配置 - 定义顶部导航栏的菜单项
+# =============================================================================
+# 字段说明：
+#   name: 菜单项显示名称
+#   path: 链接路径（有 children 时可省略，点击展开子菜单）
+#   icon: Iconify 图标标识，格式 "集合:图标名"
+#   children: (可选) 子菜单列表，结构与父级相同
+# -----------------------------------------------------------------------------
+# 图标参考：
+#   - Font Awesome 6: https://icon-sets.iconify.design/fa6-solid/
+#   - Remix Icon: https://icon-sets.iconify.design/ri/
+# -----------------------------------------------------------------------------
+navigation:
+  - name: 首页 # 菜单显示名称（nameKey 不存在时的回退文本）
+    nameKey: nav.home # i18n 翻译 key
+    path: / # 链接路径
+    icon: ri:home-heart-fill # 图标
+  # - name: 书摘
+  #   path: /reading
+  - name: 周刊
+    nameKey: nav.weekly
+    path: /weekly
+    icon: ri:newspaper-line
+  - name: 文章 # 有子菜单时，path 可省略
+    nameKey: nav.posts
+    icon: ri:quill-pen-ai-fill
+    children: # 子菜单列表
+      - name: 分类
+        nameKey: nav.categories
+        path: /categories
+        icon: ri:grid-fill
+      - name: 标签
+        nameKey: nav.tags
+        path: /tags
+        icon: fa6-solid:tags
+      - name: 归档
+        nameKey: nav.archives
+        path: /archives
+        icon: ri:archive-2-fill
+
+  - name: 关于
+    nameKey: nav.about
+    path: /about
+    icon: fa6-regular:circle-user
+  - name: 歌单
+    nameKey: nav.music
+    path: /music
+    icon: ri:music-2-fill
+  - name: 临时邮箱
+    nameKey: nav.tempmail
+    path: /temp-mail
+    icon: ri:mail-send-line
+    enabled: false # 可选功能：默认关闭（需在 Cloudflare 托管免费域名 + Email Routing 后开启）
+  - name: 网盘
+    nameKey: nav.drive
+    path: /drive
+    icon: ri:hard-drive-3-line
+    enabled: false # 可选功能：默认关闭（需部署边缘函数 /api/drive/* + 配置 R2/S3 凭据）
+  - name: 短链
+    nameKey: nav.shorten
+    path: /shorten
+    icon: ri:link
+    enabled: false # 可选功能：默认关闭（需部署边缘函数 /api/shorten/*）
+
+# =============================================================================
+# Resources Hub (网盘资源分享站)
+# 后端：edge-functions/api/[[default]].js（EdgeOne 部署，环境变量见 docs/resources-deployment.md）
+# 本地开发：/api 代理到 resources.qiyuan.icu（示例资源站域名），上线后同源访问 /api
+# =============================================================================
+resources:
+  enabled: false
+  label: 资源站
+  icon: ri:folder-download-line
+  ownerUserId: 1
+
+# =============================================================================
+# Christmas/Seasonal Features
+# 圣诞/季节性装饰功能 - 节日期间的特殊视觉效果 后续考虑新增 theme.yaml 来管理
+# =============================================================================
+# enabled: 总开关，设为 false 关闭所有节日效果
+# features: 各功能独立开关
+#   snowfall: 飘雪动画效果
+#   christmasColorScheme: 圣诞主题配色
+#   christmasCoverDecoration: 封面圣诞装饰
+#   christmasHat: 头像添加圣诞帽
+#   readingTimeSnow: 阅读时间旁显示雪花图标
+# snowfall: 飘雪效果参数（影响性能，移动端建议降低）
+#   speed: 下落速度 (0-1)，越大越快
+#   intensity: 雪花密度 (0-1)，越大越密
+#   mobileIntensity: 移动端密度，建议低于桌面端
+#   maxLayers: 最大层数，影响立体感
+#   maxIterations: 最大迭代次数，影响雪花数量
+#   mobileMaxLayers: 移动端最大层数
+#   mobileMaxIterations: 移动端最大迭代次数
+
+
+# =============================================================================
+# Temp Mail (临时邮箱)
+# 免费临时邮箱：白嫖域名 NS 托管到 Cloudflare → Email Routing catch-all → 收信 Worker 写 D1
+# 前端 /temp-mail 页面：生成随机地址、轮询收件。后端见 cloudflare/ 目录（Worker + schema + wrangler.toml）
+# domain: 白嫖免费域名（必填，NS 需托管到 Cloudflare）
+# turnstileSiteKey: Cloudflare Turnstile 站点密钥（必填，Cloudflare 控制台获取；密钥公开安全）
+# =============================================================================
+tempMail:
+  enabled: false # 模板默认关闭；需自行在 Cloudflare 托管免费域名 + Email Routing 后开启
+  domains:                                                # 可选题域名列表（用户自行选择）
+    - qiyuanmail.example.com
+    - qiyuanmail.example.fr
+    - qiyuanmail.example.ci
+  domain: qiyuanmail.example.com                            # 兼容字段（取 domains 首个），保留无害
+  retentionHours: 24
+  label: 临时邮箱
+  description: 免费临时邮箱，用于注册验证码等一次性场景，24 小时后自动销毁。
+
+# =============================================================================
+# Comment System
+# =============================================================================
+# provider: 评论系统提供商 ('remark42' | 'giscus' | 'waline' | 'twikoo' | 'custom' | 'none')
+#           设为 'none' 或不设置时禁用评论系统
+# 各提供商配置：
+# -----------------------------------------------------------------------------
+#   remark42: 自托管轻量级评论系统 (https://remark42.com/docs/getting-started/installation/)
+#     host: https://comment.example.com/ # Remark42 服务器地址
+#     siteId: your-site-id # 站点 ID
+#   giscus: 基于 GitHub Discussions 的评论系统 (https://giscus.app)（介绍文章 https://zhuanlan.zhihu.com/p/693434928）
+#     repo: GitHub 仓库名 (owner/repo 格式)
+#     repoId: 仓库 ID (从 giscus.app 获取)
+#     category: Discussion 分类名称
+#     categoryId: 分类 ID (从 giscus.app 获取)
+#     mapping: 映射方式 ('pathname' | 'url' | 'title' | 'og:title'……)
+#     reactionsEnabled: 启用 reactions (默认: '1') # 仅支持 '0' | '1'
+#     emitMetadata: 发送元数据 (默认: '0') # 仅支持 '0' | '1'
+#     inputPosition: 输入框位置 ('top' | 'bottom', 默认: 'top')
+#     lang: 语言 (默认: 'zh-CN')
+#     host: 自定义 giscus 主机 (可选) 'https://giscus.app' | '...'
+#     theme: 主题 (可选) 'light' | 'dark' | '...'
+#     loading: 加载方式 (可选) 'lazy' | 'eager';
+#   waline: 简洁安全的评论系统 (https://waline.js.org)
+#     serverURL: Waline 服务端地址 (必填)
+#     lang: 语言 (默认: 'zh-CN')
+#     dark: 暗黑模式支持 (默认: 'html.dark')
+#           - 字符串: CSS 选择器，当该选择器生效时启用暗黑模式
+#           - true: 根据设备自适应
+#           - false: 禁用暗黑模式
+#     meta: 评论者信息字段 (默认: ['nick', 'mail', 'link'])
+#     requiredMeta: 必填字段 (默认: [])
+#     login: 登录模式 ('enable' | 'disable' | 'force', 默认: 'enable')
+#     wordLimit: 评论字数限制
+#           - 单个数字: 最大字数限制
+#           - 数组 [min, max]: 最小和最大字数限制
+#           - 0: 无限制 (默认: 0)
+#     pageSize: 每页评论数 (默认: 10)
+#     imageUploader: 图片上传功能 (默认: false)
+#     highlighter: 代码高亮 (默认: true)
+#     texRenderer: LaTeX 渲染 (默认: false)
+#     search: 搜索功能 (默认: false)
+#     reaction: 文章反应功能
+#           - false: 禁用 (默认)
+#           - true: 启用默认反应
+#           - 数组: 自定义反应图标 URL 列表
+#     emoji: 表情包配置
+#           - false: 禁用表情包
+#           - true: 使用默认表情包
+#           - 数组: 自定义表情包列表 (默认: ['//unpkg.com/@waline/emojis@1.2.0/weibo'])
+#     commentSorting: 评论排序方式 ('latest' | 'oldest' | 'hottest', 默认: 'latest')
+#     noCopyright: 隐藏页脚版权信息 (默认: false)
+#     comment: 评论数统计 (默认: true)
+#     pageview: 页面访问量统计 (默认: true)
+#     recaptchaV3Key: reCAPTCHA v3 Key (可选)
+#     turnstileKey: Cloudflare Turnstile Key (可选)
+#     locale: 自定义语言显示 (可选)
+  # twikoo:
+    # envId: # Twikoo 环境 ID (腾讯云) 或 Vercel 环境地址 (必填)
+    # region: # 环境地域，默认为 ap-shanghai
+    # path: # 用于区分不同文章的自定义 js 路径，如果您的文章路径不是 location.pathname，需传此参数
+    # lang: # 语言 (默认: 'zh-CN')
+comment:
+  provider: none  # 模板默认关闭。可选：'custom'(需 Cloudflare KV+R2) / 'giscus' / 'waline' / 'twikoo'。设为 'none' 关闭评论。
+  # remark42:
+  #   host: https://comment.example.com/
+  #   siteId: your-site-id
+  # giscus:
+  #   repo: username/repo              # GitHub 仓库名 (owner/repo 格式)
+  #   repoId: R_kgDOxxxxxx             # 仓库 ID (从 giscus.app 获取)
+  #   category: Announcements          # Discussion 分类名称
+  #   categoryId: DIC_kwDOxxxxxx       # 分类 ID (从 giscus.app 获取)
+  #   mapping: pathname                # 映射方式
+  #   reactionsEnabled: '1'            # 启用 reactions ('0' | '1')
+  #   emitMetadata: '0'                # 发送元数据 ('0' | '1')
+  #   inputPosition: top               # 输入框位置 ('top' | 'bottom')
+  #   lang: zh-CN                      # 语言
+
+  # waline:
+  #   serverURL: https://your-waline.vercel.app  # Waline 服务端地址 (必填)
+  #   lang: zh-CN                      # 语言 (默认: 'zh-CN')
+  #   dark: html.dark                  # 暗黑模式 (默认: 'html.dark')
+  #                                    # 可选: true (自适应) | false (禁用) | CSS选择器字符串
+  #   meta:                            # 评论者信息字段 (默认: ['nick', 'mail', 'link'])
+  #     - nick
+  #     - mail
+  #     - link
+  #   requiredMeta:                    # 必填字段 (默认: [])
+  #     - nick
+  #   login: enable                    # 登录模式 ('enable' | 'disable' | 'force', 默认: 'enable')
+  #   wordLimit: 0                     # 评论字数限制 (0 = 无限制, 默认: 0)
+  #                                    # 可选: 单个数字 | [min, max] 数组
+  #   pageSize: 10                     # 每页评论数 (默认: 10)
+  #   imageUploader: false             # 图片上传功能 (默认: false)
+  #   highlighter: true                # 代码高亮 (默认: true)
+  #   texRenderer: false               # LaTeX 渲染 (默认: false)
+  #   search: false                    # 搜索功能 (默认: false)
+  #   reaction: false                  # 文章反应功能 (默认: false)
+  #                                    # 可选: true | false | 字符串数组 (自定义反应图标)
+  #   emoji: true                      # 表情包配置 (默认: ['//unpkg.com/@waline/emojis@1.2.0/weibo'])
+  #                                    # 可选: true | false | 字符串/对象数组
+  #                                    # 预设表情包: '//unpkg.com/@waline/emojis@1.2.0/weibo'
+  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/alus'
+  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/bilibili'
+  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/qq'
+  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/tieba'
+  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/tw-emoji'
+  #   commentSorting: latest           # 评论排序 ('latest' | 'oldest' | 'hottest', 默认: 'latest')
+  #   noCopyright: false               # 隐藏页脚版权信息 (默认: false)
+  #   comment: true                    # 评论数统计 (默认: true)
+  #   pageview: true                   # 页面访问量统计 (默认: true)
+  #   # recaptchaV3Key: ''             # reCAPTCHA v3 Key (可选)
+  #   # turnstileKey: ''               # Cloudflare Turnstile Key (可选)
+  #   # locale:                        # 自定义语言显示 (可选)
+  #   #   placeholder: '请留言...'      # 自定义输入框占位文本
+  twikoo:
+    envId: https://your-twikoo.vercel.app  # Twikoo 环境 ID (腾讯云) 或 Vercel 环境地址 (必填)
+    # region: ap-shanghai              # 环境地域，默认为 ap-shanghai
+    # path: location.pathname          # 用于区分不同文章的自定义 js 路径
+    # lang: zh-CN                     # 语言 (默认: 'zh-CN')
+
+# =============================================================================
+# Analytics (Umami)
+# =============================================================================
+# id: Umami 网站 ID
+# endpoint: Umami 服务器地址
+# enabled: 是否启用统计
+# statistics_display: 统计信息显示配置
+#   token: Umami 分享链接令牌（只读，可安全暴露到客户端）
+#   article_page_views: 在文章详情页显示访问量
+#   footer_site_stats: 在页脚 Site Stats 中显示全站访问量
+#
+# pageviews: 基于 EdgeOne Pages KV 的自建访问量计数器（无需 Umami）
+#   通过 /api/views 边缘函数把每篇文章及全站访问量存到 KV 命名空间
+#   需在 EdgeOne 控制台创建 KV 命名空间并绑定到本项目，变量名: qiyuan_kv
+#   enabled: 总开关
+#   article_page_views: 在文章页/文章卡片显示该文访问量（首次访问 +1）
+#   footer_site_stats: 在页脚 Site Stats 中显示全站总访问量
+# -----------------------------------------------------------------------------
+analytics:
+  umami:
+    enabled: false
+    id: your-umami-id
+    endpoint: https://stats.example.com
+    # statistics_display:
+    #   token: your-umami-share-token
+    #   article_page_views: true
+    #   footer_site_stats: true
+  pageviews:
+    enabled: true
+    article_page_views: true
+    footer_site_stats: true
+
+# =============================================================================
+# SEO Configuration
+# =============================================================================
+# https://github.com/alextim/astro-lib/tree/main/packages/astro-robots-txt#readme
+# robots: robots.txt 配置 (由 astro-robots-txt 自动生成)
+#   policy: 爬虫策略数组（可选，默认允许所有）
+#     - userAgent: 爬虫名称，'*' 表示所有
+#       allow: 允许路径（可为字符串或数组）
+#       disallow: 禁止路径（可为字符串或数组）
+#   host: 是否添加 Host 指令（可选，适用于 Yandex）
+# -----------------------------------------------------------------------------
+seo:
+  robots:
+    # sitemap: 在 robots.txt 中声明的 Sitemap 指令。
+    #   注意 astro-robots-txt 要求 sitemap 值必须是完整 https URL，故此处只写相对文件名，
+    #   由 astro.config.mjs 自动用 site.url 拼接为完整 URL 后写入 robots.txt。
+    #   sitemap-index.xml 为主站点地图（由 @astrojs/sitemap 生成）。
+    sitemap:
+      - sitemap-index.xml
+    # policy:                          # 爬虫策略（可选，取消注释并配置）
+    #   - userAgent: '*'
+    #     allow: '/'
+    #     disallow:
+    #       - '/api/'
+    # host: true                       # 可选：添加 Host 指令（Yandex）
+
+# =============================================================================
+# Christmas/Seasonal Features
+# =============================================================================
+bgm:
+  enabled: true  # (有 audio 时自动启用，显式 false 可禁用)
+  metingApi: https://api.i-meto.com/meting/api
+  audio:
+    - title: 我的歌单
+      list:
+        - https://music.example.com/your-playlist
+
+christmas:
+  enabled: false # 总开关
+  # features: # 各功能独立开关
+  #   snowfall: true # 飘雪效果
+  #   christmasColorScheme: true # 圣诞配色
+  #   christmasCoverDecoration: true # 封面装饰
+  #   christmasHat: true # 头像圣诞帽
+  #   readingTimeSnow: true # 阅读时间雪花图标
+  # snowfall: # 飘雪参数配置
+  #   speed: 0.5 # 下落速度 (0-1)
+  #   intensity: 0.7 # 雪花密度 (0-1)
+  #   mobileIntensity: 0.4 # 移动端密度（建议较低）
+  #   maxLayers: 6 # 最大层数
+  #   maxIterations: 8 # 最大迭代次数
+  #   mobileMaxLayers: 4 # 移动端最大层数
+  #   mobileMaxIterations: 6 # 移动端最大迭代次数
+
+# =============================================================================
+# Anime Effects (二次元动漫特效)
+# 樱花飘落 / 点击爱心星星爆裂 / 鼠标星光拖尾（纯 Canvas 2D，轻量无额外依赖）
+# =============================================================================
+# enabled: 总开关
+# features: 各特效独立开关
+#   sakuraFall: 樱花花瓣全屏飘落
+#   clickBurst: 点击页面时爆出爱心/星星粒子
+#   cursorTrail: 鼠标移动星光拖尾（仅桌面端生效，移动端自动禁用）
+# sakura: 樱花参数
+#   intensity: 桌面端花瓣数量
+#   mobileIntensity: 移动端花瓣数量（建议较低）
+#   speed: 下落速度倍率
+# 所有特效均遵循系统"减少动态效果"(prefers-reduced-motion) 设置
+# -----------------------------------------------------------------------------
+anime:
+  enabled: true # 总开关
+  features:
+    sakuraFall: true # 樱花飘落
+    clickBurst: true # 点击爱心/星星爆裂
+    cursorTrail: false # 鼠标星光拖尾（喜欢可改 true）
+  sakura:
+    intensity: 24 # 桌面端花瓣数量
+    mobileIntensity: 12 # 移动端花瓣数量
+    speed: 1 # 下落速度倍率
+
+# =============================================================================
+# Bangumi (Media Tracking)
+# 追番页面 - 注释掉整个 bangumi 段即可关闭（页面 + 导航自动隐藏）
+# =============================================================================
+# 字段说明：
+#   userId: Bangumi 用户名或数字 ID（必填）
+#   label: 导航显示名称（可选，默认：追番）
+#   icon: 导航图标，Iconify 格式（可选，默认：ri:bilibili-fill）
+# -----------------------------------------------------------------------------
+# bangumi:
+#   userId: cosine
+  # label: 追番
+  # icon: ri:bilibili-fill
+
+# =============================================================================
+# Development Tools (Dev Only)
+# 开发工具配置 - 仅在开发环境（pnpm dev）生效
+# =============================================================================
+# 配置后，开发环境下文章页会显示编辑按钮，可快速打开本地编辑器
+# 字段说明：
+#   localProjectPath: 本地项目的绝对路径（用于生成文件完整路径）
+#   contentRelativePath: 博客内容相对于项目根目录的路径（默认: 'src/content/blog'）
+#   editors: 编辑器列表
+#     - id: 编辑器唯一标识符
+#     - name: 编辑器显示名称
+#     - icon: Iconify 图标标识（可从 https://icon-sets.iconify.design/ 中搜寻）
+#     - urlTemplate: URL 模板，支持占位符 {path}（文件绝对路径）
+# -----------------------------------------------------------------------------
+dev:
+  localProjectPath: 'C:/path/to/your-blog'
+  contentRelativePath: 'src/content/blog'
+  editors:
+    - id: vscode
+      name: VS Code
+      icon: devicon-plain:vscode
+      urlTemplate: 'vscode://file/{path}'
+    - id: cursor
+      name: Cursor
+      icon: simple-icons:cursor
+      urlTemplate: 'cursor://file/{path}'
+    - id: zed
+      name: Zed
+      icon: simple-icons:zedindustries
+      urlTemplate: 'zed://file/{path}'

@@ -1,0 +1,34 @@
+---
+import { getSortedPosts, normalizeTag } from '@lib/content';
+import { defaultLocale, localeList } from '@/i18n/config';
+import TagPage from '../../tags/[tag].astro';
+
+export async function getStaticPaths() {
+  const nonDefaultLocales = localeList.filter((l) => l !== defaultLocale);
+  const paths = [];
+
+  for (const lang of nonDefaultLocales) {
+    const posts = await getSortedPosts(lang);
+    const tags = new Set<string>();
+
+    for (const post of posts) {
+      const postTags = post.data.tags || [];
+      for (const tag of postTags) {
+        tags.add(normalizeTag(tag));
+      }
+    }
+
+    for (const tag of tags) {
+      paths.push({
+        params: { lang, tag: normalizeTag(tag).replace(/\//g, '-') },
+        props: { tag },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { tag } = Astro.props;
+---
+<TagPage tag={tag} />

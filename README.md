@@ -23,6 +23,29 @@
 
 > 本仓库 **`qiyuan-blog-template`** 是一个**博客模板**：在 GitHub 仓库页面点击 **Use this template** 即可一键创建你自己的博客仓库，再按需修改 `config/site.yaml`、填充文章、配置环境变量后部署。部署优先推荐国内友好的 **EdgeOne Makers**，详见下方「作为模板使用」（资源站为独立子项目，需单独部署，见「资源站搭建教程」）。
 
+## 永久免费说明
+
+**本模板的全部功能（含评论、站内 AI 助手、资源站、临时邮箱、文章朗读、短链、网盘）在对应服务商的免费额度内均可永久免费使用，不强制任何付费。** 下表列出每个功能所依赖的外部服务及其当前免费额度（数据核实于 2026-07，以各厂商官网为准）：
+
+| 功能 | 依赖服务 | 免费额度（当期） |
+| --- | --- | --- |
+| 站点托管 + 全部 API（RAG / 临时邮箱 / 评论 / 上传 / MCP / 统计） | EdgeOne Makers | 边缘函数 300 万次/月、云函数 100 万次/月、KV / Blob 各 1 GB、构建 500 次/月、自定义域名 200 个、免费 SSL；网站加速流量/请求在限免阶段不限量（免费版不含视频/大文件分发加速，本站视频与网盘文件经 R2 直传，不消耗该加速额度） |
+| 站内 AI 助手 · 博客文章向量库 | Neon（Postgres + pgvector） | 永久免费：0.5 GB 存储/项目、100 CU-小时/月、100 个项目、5 GB 出站/月（空闲自动缩容） |
+| 站内 AI 助手 · 资源站向量库 | Supabase | 永久免费：500 MB 数据库、1 GB 文件存储、5 GB 带宽/月、5 万 MAU、API 请求不限量（空闲 7 天暂停） |
+| 站内 AI 助手 · 嵌入 / 重排 | 硅基流动 bge-m3 / bge-reranker | 永久免费、中国大陆直连、1000 RPM |
+| 站内 AI 助手 · 生成模型 | 智谱 GLM-4.7-Flash（首选兜底） | 永久免费（200K 上下文）；ModelScope Llama-3.3-70B 每日 2000 次免费；商汤 deepseek-v4-flash 公测免费（每 5 小时数百次调用） |
+| 评论存储 | Cloudflare KV | 10 万读/天、1000 写/天、1000 删/天、1 GB 存储 |
+| 评论图 / 文章朗读音频 / 网盘对象 | Cloudflare R2 | 10 GB 存储/月、100 万 Class A 操作、1000 万 Class B 操作/月、出站流量免费 |
+| 评论图 / 网盘上传 Worker | Cloudflare Workers | 10 万请求/天 |
+| 临时邮箱（收信 / 存储 / 验证） | Cloudflare D1 + Email Routing + Turnstile | D1 5 GB 存储 / 500 万行读/天；Email Routing 免费；Turnstile 免费无限 |
+| 短链存储 | Cloudflare KV | 与评论共用同一命名空间额度（键前缀 `short:`） |
+
+> **说明**：
+> - **永久免费档**（长期有效）：Neon、Supabase、Cloudflare（Workers/KV/R2/D1/Email Routing/Turnstile）、硅基流动嵌入/重排、智谱 GLM-4.7-Flash。
+> - **当前限时免费 / 公测**：EdgeOne Makers 加速流量处于限免阶段；商汤 sensenova（deepseek-v4-flash）为免费公测，额度与政策可能随公测结束调整——但模板已内置**多生成平台兜底**（智谱 GLM-4.7-Flash 永久免费、ModelScope 每日 2000 次免费），任一平台变动都不会让 AI 助手失效。
+> - **文章朗读音频在本地预生成**（Edge TTS，走微软免费语音端点，无需密钥、无费用），生成后仅占用 Cloudflare R2 的存储额度。
+> - 只要使用量不超出上表各档额度，整套博客（含全部可选功能）即可**零成本永久运行**；仅在超出免费额度后才需按量付费（如 Supabase 扩容、Cloudflare 超出请求数、Neon 升级计算等）。
+
 ## 🚀 作为模板使用
 
 1. 进入本仓库 **`qiyuan-blog-template`** 页面，点击 **Use this template → Create a new repository**，填写你的新仓库名（可任意命名）。

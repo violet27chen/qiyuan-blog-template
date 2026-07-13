@@ -1,3 +1,5 @@
+[中文](./README.md) | [English](./README.en.md) | [日本語](./README.ja.md)
+
 # qiyuan-blog-template
 
 > 🚀 **带 AI 问答的 Astro 全功能博客模板** — 内置 RAG 站内问答、文章朗读、评论、网盘、短链与资源站，EdgeOne Makers 部署，开箱即用。
